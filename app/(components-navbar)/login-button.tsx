@@ -8,7 +8,7 @@ export default function LoginButton() {
 
   const handleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
+      provider: "github",
       options: {
         redirectTo: `${location.origin}/auth/callback`,
         queryParams: {
@@ -28,5 +28,5 @@ export default function LoginButton() {
 
     return;
   };
-  return <Button onClick={handleSignIn}>Log in with Google</Button>;
+  return <Button onClick={handleSignIn}>Log in with GitHub</Button>;
 }
