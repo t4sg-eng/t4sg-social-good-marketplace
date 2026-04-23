@@ -28,5 +28,5 @@ export default function LoginButton() {
 
     return;
   };
-  return <Button onClick={handleSignIn}>Log in with Google</Button>;
+  return <Button onClick={handleSignIn}>Log in with GitHub</Button>;
 }
