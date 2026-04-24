@@ -5,22 +5,19 @@ export interface Database {
     Tables: {
       profiles: {
         Row: {
-          biography: string | null;
-          display_name: string;
-          email: string;
           id: string;
+          username: string | null;
+          avatar_url: string | null;
         };
         Insert: {
-          biography?: string | null;
-          display_name: string;
-          email: string;
           id: string;
+          username?: string | null;
+          avatar_url?: string | null;
         };
         Update: {
-          biography?: string | null;
-          display_name?: string;
-          email?: string;
           id?: string;
+          username?: string | null;
+          avatar_url?: string | null;
         };
         Relationships: [
           {

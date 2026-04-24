@@ -27,7 +27,7 @@ export function delay(milliseconds: number) {
 // This can be used in both client and server components, just pass in the corresponding supabase client as a prop.
 // Also note the structure of the function typing and return, which ensures that errors from supabase MUST be handled whenever this query is used in a component.
 export async function getUserProfile(
-  supabase: SupabaseClient<Database>,
+  supabase: Pick<SupabaseClient<any, any, any, any>, "from">,
   user: User,
 ): Promise<{ profile: Profile; error: null } | { profile: null; error: Error }> {
   const { data, error } = await supabase.from("profiles").select().eq("id", user.id);

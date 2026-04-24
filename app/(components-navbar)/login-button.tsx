@@ -10,7 +10,8 @@ export default function LoginButton() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${location.origin}/auth/callback`,
+        // Must pass through callback route so auth code is exchanged for a session.
+        redirectTo: `${location.origin}/auth/callback?next=/dashboard`,
         queryParams: {
           access_type: "offline",
           prompt: "consent",
