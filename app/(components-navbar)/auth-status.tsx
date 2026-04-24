@@ -17,7 +17,18 @@ export default async function AuthStatus() {
   const { profile, error } = await getUserProfile(supabase, user);
 
   if (error) {
-    return;
+    const fallbackUsername = ((user.user_metadata?.user_name as string | undefined) ?? user.email?.split("@")[0] ?? "User")
+      .trim() || "User";
+
+    return (
+      <UserNav
+        profile={{
+          id: user.id,
+          username: fallbackUsername,
+          avatar_url: (user.user_metadata?.avatar_url as string | undefined) ?? null,
+        }}
+      />
+    );
   }
 
   return <UserNav profile={profile} />;

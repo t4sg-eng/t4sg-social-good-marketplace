@@ -7,7 +7,6 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
 import { type Database } from "@/lib/schema";
@@ -24,10 +23,10 @@ const profileFormSchema = z.object({
       message: "Username must not be longer than 30 characters.",
     })
     .transform((val) => val.trim()),
-  bio: z
+  avatar_url: z
     .string()
-    .max(160, {
-      message: "Biography cannot be longer than 160 characters.",
+    .max(2048, {
+      message: "Avatar URL cannot be longer than 2048 characters.",
     })
     .nullable()
     // Transform empty string or only whitespace input to null before form submission, and trim whitespace otherwise
@@ -47,8 +46,8 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
   Read more here: https://legacy.react-hook-form.com/api/useform/
   */
   const defaultValues = {
-    username: profile.display_name,
-    bio: profile.biography,
+    username: profile.username ?? "",
+    avatar_url: profile.avatar_url ?? "",
   };
 
   const form = useForm<ProfileFormValues>({
@@ -63,7 +62,7 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
     const supabase = createBrowserSupabaseClient();
     const { error } = await supabase
       .from("profiles")
-      .update({ biography: data.bio, display_name: data.username })
+      .update({ username: data.username, avatar_url: data.avatar_url })
       .eq("id", profile.id);
 
     if (error) {
@@ -112,39 +111,23 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
                 <Input readOnly={!isEditing} placeholder="Username" {...field} />
               </FormControl>
               <FormDescription>
-                This is your public display name. It can be your real name or a pseudonym.
+                This is your public username. It can be your real name or a pseudonym.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormItem>
-          <FormLabel>Email</FormLabel>
-          <FormControl>
-            <Input readOnly placeholder={profile.email} />
-          </FormControl>
-          <FormDescription>This is your verified email address.</FormDescription>
-          <FormMessage />
-        </FormItem>
         <FormField
           control={form.control}
-          name="bio"
+          name="avatar_url"
           render={({ field }) => {
-            // We must extract value from field and convert a potential defaultValue of `null` to "" because textareas can't handle null values: https://github.com/orgs/react-hook-form/discussions/4091
-            const { value, ...rest } = field;
             return (
               <FormItem>
-                <FormLabel>Bio</FormLabel>
+                <FormLabel>Avatar URL</FormLabel>
                 <FormControl>
-                  <Textarea
-                    readOnly={!isEditing}
-                    value={value ?? ""}
-                    placeholder="Tell us a little bit about yourself"
-                    className="resize-none"
-                    {...rest}
-                  />
+                  <Input readOnly={!isEditing} placeholder="https://..." {...field} />
                 </FormControl>
-                <FormDescription>A short description of yourself!</FormDescription>
+                <FormDescription>A URL to your profile picture.</FormDescription>
                 <FormMessage />
               </FormItem>
             );
