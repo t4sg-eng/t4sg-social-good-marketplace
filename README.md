@@ -1,13 +1,13 @@
-# T4SG Starter Project
+# Social Good Marketplace
 
-- [T4SG Starter Project](#t4sg-starter-project)
+- [Social Good Marketplace](#social-good-marketplace)
   - [Introduction](#introduction)
   - [Setup](#setup)
     - [(1) Clone repository](#1-clone-repository)
     - [(2) Package installation](#2-package-installation)
     - [(3) Supabase Connection Setup](#3-supabase-connection-setup)
     - [(4) Supabase Database Setup](#4-supabase-database-setup)
-    - [(5) Supabase + Google Authentication Setup](#5-supabase--google-authentication-setup)
+    - [(5) Supabase + Github Authentication Setup](#5-supabase--github-authentication-setup)
       - [User auth workflow + security explained](#user-auth-workflow--security-explained)
     - [(6) Supabase CLI Setup](#6-supabase-cli-setup)
     - [(7) Run the webapp](#7-run-the-webapp)
@@ -64,7 +64,7 @@ Along with this README, the codebase has several comments that should be helpful
 `cd` into a desired destination folder, then clone the repo (preferably using SSH):
 
 ```shell
-git clone git@github.com:hcs-t4sg/starter-project-2023-v2.git
+git clone git@github.com:aliisona/t4sg-social-good-marketplace.git
 ```
 
 #### (2) Package installation
@@ -73,7 +73,7 @@ git clone git@github.com:hcs-t4sg/starter-project-2023-v2.git
 
    ```bash
    # Navigate into the project directory
-   cd starter-project-2023-v2
+   cd t4sg-social-good-marketplace
 
    # Open in VSCode
    code .
@@ -109,7 +109,7 @@ git clone git@github.com:hcs-t4sg/starter-project-2023-v2.git
 
    - Try to avoid using special characters like `?`, `$`, etc. in your password.
 
-2. There is a `.env.example` file in your local project directory (e.g. in VSCode). Duplicate it (into the same directory) and rename to `.env`. Inside `.env`, set the following variables according to your Supabase project settings:
+2. There is a `env.example` file in your local project directory (e.g. in VSCode). Duplicate it (into the same directory) and rename to `.env`. Inside `.env`, set the following variables according to your Supabase project settings:
 
    - `NEXT_PUBLIC_SUPABASE_URL`: Paste from Project Settings > API > Project URL.
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Paste from Project Settings > API > Project API Keys > `anon` `public`.
@@ -122,37 +122,41 @@ git clone git@github.com:hcs-t4sg/starter-project-2023-v2.git
    # Some other comments above
    NEXT_PUBLIC_SUPABASE_URL="https://abcdefghijklmnopqrst.supabase.co"
    NEXT_PUBLIC_SUPABASE_ANON_KEY="longlonglongstring"
-   SECRET_SUPABASE_CONNECTION_STRING="postgresql://postgres:YourDatabasePasswordHere@db.abcdefghijklmnopqrst.supabase.co:5432/postgres"
    ```
 
-You should not share these keys publicly, especially the `SECRET_SUPABASE_CONNECTION_STRING`. Note that this project uses a package from the popular [T3 stack](https://create.t3.gg/) to validate and provide typesafety to environment variables in `env.mjs` (more on this below). When using these environment variables in your code, you can import them from `env.mjs`. `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are used in the codebase itself and are thus included in this file. `SECRET_SUPABASE_CONNECTION_STRING` is used only in a helper script in `package.json` and not in the app itself, so it doesn't need to be validated.
+You should not share these keys publicly. Note that this project uses a package from the popular [T3 stack](https://create.t3.gg/) to validate and provide typesafety to environment variables in `env.mjs` (more on this below). When using these environment variables in your code, you can import them from `env.mjs`. `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are used in the codebase itself and are thus included in this file. `SECRET_SUPABASE_CONNECTION_STRING` is used only in a helper script in `package.json` and not in the app itself, so it doesn't need to be validated.
 
 #### (4) Supabase Database Setup
 
 1. In your Supabase project dashboard, navigate to `SQL Editor` in the left sidebar, then click `(+) New Query` > `New blank query`. If you wish, you can rename the query from "Untitled Query" to something else by clicking the dropdown in the left sidebar.
 2. In your starter code, there is a `setup.sql` file containing a SQL script that will set up the database for you. Copy the entire contents of the file and paste it into your new query.
-   - You should also read through the script to see what it does. The most important part is the trigger that updates the `profiles` table when a new user signs in through Supabase Auth.
+   - You should also read through the script to see what it does. The most important part is the trigger that updates the `profiles` table when a new user signs in through Github Auth.
 3. Run the query with the button in the bottom right or by pressing `cmd` + `return`. In the results panel, you should see the message `Success. No rows returned`.
 
-#### (5) Supabase + Google Authentication Setup
+#### (5) Supabase + Github Authentication Setup
 
-Supabase offers user authentication through a wide range of providers (email + password, email magic link, OAuth, etc.). This starter project uses Google OAuth for user authentication, as it is among the most secure methods and should be widely applicable for many clients.
+Supabase offers user authentication through a wide range of providers (email + password, email magic link, OAuth, etc.). This starter project uses Github OAuth for user authentication, as it is among the most secure methods and should be widely applicable for many clients.
 
 To set up user authentication:
 
-1. Follow the instructions in the **Prerequisites** and **Application code configuration** sections in Supabase's Google OAuth documentation [here](https://supabase.com/docs/guides/auth/social-login/auth-google).
-   - When creating your Google Cloud project, use your Harvard Google account, use the `college.harvard.edu` organization, and select "Internal" user type. This is the quickest setup for development, but it limits your app to Harvard users. Make sure to change to "External" user type for handoff/deployment to your client; this will take time to verify your app!
-   - When adding your site URL to the **Authorized Javascript Origins** (step 7 of Application code configuration), use `http://localhost:3000`. This is fine for development, but you will need to change this when deploying!
-   - We're not using Google's pre-built configuration. The "Signing users in" section has already been completed, but you can read through it for more info. It's particularly helpful if you plan to connect your to additional Google services or APIs.
-2. Login to your Supabase dashboard and navigate to Authentication (left sidebar) > URL Configuration > Redirect URLs > Add URL, and add the following URL: `http://localhost:3000/auth/callback`.
+1. Follow the instructions in the **Prerequisites** and **Application code configuration** sections in Supabase's Github OAuth documentation [here](https://supabase.com/docs/guides/auth/social-login/auth-github).
+2. Login to your Supabase dashboard and navigate to Authentication (left sidebar) > URL Configuration > Redirect URLs > Add URL, and add the following URL: `http://localhost:3000/auth/callback`. This is for local development only.
    - Supabase's auth workflow needs to redirect to the `/auth/callback` route after login in order to properly store the user session in cookies. Thus, we need to add this route to our list of allowed redirects in our Supabase project!
    - This config works fine for development. When deploying a production build, make sure to navigate to the same location in your Supabase dashboard and update both the **Site URL** and **Redirect URLs** to match your website/deployment! (i.e. Site URL should be `http://mywebsite.com` and Redirect URL should be `http://mywebsite.com/auth/callback`.)
+3. **Configure Supabase as OAuth Provider**: Navigate to the Supabase project dashboard, specifically `Authentication > Providers`. Enable the GitHub provider and copy the provided `Redirect URI`. Make sure you are admin or you will not have the privileges to edit this.
+4. **Register GitHub OAuth Application**: On GitHub, go to `Settings > Developer settings > OAuth Apps` (for personal account) or `Organization settings > Developer settings > OAuth Apps` (for an organization). Register a new OAuth App using a descriptive name, your application's `Homepage URL`, and the `Redirect URL` obtained from Supabase as the `Authorization callback URL`. After registration, obtain the `Client ID` and generate a `Client Secret`.
+5. **Update Supabase with GitHub Credentials**: Return to the Supabase `Authentication > Providers > GitHub` settings and paste the GitHub `Client ID` and `Client Secret` into the respective fields. Save the changes.
+6. **Configure Environment Variables**: Ensure project's `.env` file contains the correct `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` for your Supabase project.
+7. **Configure Supabase Database**: Create a `profiles` table in your Supabase database by copying the setup.sql file into the SQL editor. You call follow the instructions listed under [Supabase Database Setup](#4-supabase-database-setup)This table should have an `id` column that is a `uuid` and a `primary key`, referencing `auth.users.id` with a foreign key constraint. Include additional fields like `username` (text, unique) and `avatar_url` (text) to store GitHub-specific user data.
+    1. Enable Row Level Security (RLS) on the `profiles` table. Implement `SELECT` and `UPDATE` policies to restrict users to their own profile data (e.g., `using (auth.uid() = id)`).
+    2. Create a PostgreSQL function (e.g., `public.handle_new_user()`) that triggers `after insert` on the `auth.users` table. This function should automatically insert a new row into the `public.profiles` table with the `id` from `auth.users` and extract initial `username` and `avatar_url` from `new.raw_user_meta_data`.
+8. **Frontend Integration (for completeness)**: Implement `supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: '/dashboard' }})` in your `post.tsx` or relevant client-side code to initiate the GitHub login flow.
 
 Check out the [Supabase Auth documentation](https://supabase.com/docs/guides/auth/server-side/nextjs?queryGroups=router&router=app) for more explanation on how Supabase Auth works with Next.js, as well as helpful guides for switching authentication providers if you need!
 
 ##### User auth workflow + security explained
 
-When a user logs in, Supabase stores info about the user in the `users` table in the `auth` schema. This table is internal to Supabase and cannot be edited to store additional user info. Thus, in the `setup.sql` script we ran earlier, we created a `profiles` table in the `public` schema, which is the part of the database that is accessible and configurable. We also added a database trigger that creates a new row in the `profiles` table whenever a new user signs in. The `id` of the new row in `public.profiles` matches the `id` of the new user in `auth.users`. Thus, you can manage the columns in the `profiles` table to structure the user-associated data your app needs (e.g. email, display name, biography, etc).
+When a user logs in, Supabase stores info about the user in the `users` table in the `auth` schema. This table is internal to Supabase and cannot be edited to store additional user info. Thus, in the `setup.sql` script we ran earlier, we created a `profiles` table in the `public` schema, which is the part of the database that is accessible and configurable. We also added a database trigger that creates a new row in the `profiles` table whenever a new user signs in. The `id` of the new row in `public.profiles` matches the `id` of the new user in `auth.users`. Thus, you can manage the columns in the `profiles` table to structure the user-associated data your app needs (e.g. email, username, avatar, etc).
 
 If you need to remove a user from your Supabase project (e.g. so that they can sign in "for the first time" again), you should remove their corresponding row from `public.profiles`. You can then navigate to Authentication > Users and delete their corresponding user.
 
@@ -229,14 +233,18 @@ This folder contains the main application code, including pages, some components
   The `(components-navbar)` folder contains components related to the navigation bar, including user authentication status, login functionality, and theme toggling.
 
   - `auth-status.tsx`: Checks the user's authentication status using Supabase, and either displays the `UserNav` component or the `LoginButton` component.
-  - `login-button.tsx`: Provides a button for users to login using Google OAuth and handles the sign-in process.
+  - `login-button.tsx`: Provides a button for users to login using Github OAuth and handles the sign-in process.
   - `mode-toggle.tsx`: Provides a dropdown menu component that allows users to toggle between light, dark, and system themes.
   - `navbar.tsx`: Renders the main navigation bar of the application. It includes links to the various pages of the application. To add a new 'tab' to the navbar, the developer must edit this file.
   - `user-nav.tsx`: Displays a dropdown menu with user-specific options such as viewing the profile, accessing settings, and logging out.
 
-- `auth/callback`
+- `auth/`
 
-  The `auth/callback` folder contains the `route.ts` file, which handles the callback from Supabase authentication. Its primary function is to process the authentication code received from Supabase, exchange it for a session, and set the session cookies. If the authentication is successful, it redirects the user to the specified next URL; otherwise, it redirects to an error page.
+  The `auth/` folder contanis files related to authenticating users.
+
+  - `auth/auth-code-error`: stores the page displayed when login fails
+
+  - `auth/callback` folder contains the `route.ts` file, which handles the callback from Supabase authentication. Its primary function is to process the authentication code received from Supabase, exchange it for a session, and set the session cookies. If the authentication is successful, it redirects the user to the specified next URL; otherwise, it redirects to an error page.
 
 - `dashboard`
 
