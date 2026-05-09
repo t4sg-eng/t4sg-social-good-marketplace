@@ -1,7 +1,25 @@
 /* ============================================================
    Landing page styles
-   All Tailwind utilities are applied here via @apply so that
-   page.tsx contains zero inline class strings.
+
+   Rule: @apply is used for layout/spacing/typography only.
+   ALL colors are written as plain CSS properties so they are
+   never dependent on Tailwind's dark-mode processing or JIT
+   purging inside a CSS Module.
+
+   Semantic text/bg colors use hsl(var(--...)) from globals.css
+   — they switch automatically when .dark is on <html>.
+   Emerald accent colors use hardcoded RGB values and are
+   overridden in :global(.dark) blocks.
+
+   Tailwind emerald reference:
+     emerald-100  #d1fae5  rgb(209 250 229)
+     emerald-300  #6ee7b7  rgb(110 231 183)
+     emerald-400  #34d399  rgb(52  211 153)
+     emerald-500  #10b981  rgb(16  185 129)
+     emerald-600  #059669  rgb(5   150 105)
+     emerald-700  #047857  rgb(4   120  87)
+     emerald-900  #064e3b  rgb(6    78  59)
+     emerald-950  #022c22  rgb(2    44  34)
    ============================================================ */
 
 /* ── Root ── */
@@ -17,19 +35,41 @@
 }
 
 .heroTag {
-  @apply rounded-full bg-emerald-100 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-700;
+  @apply rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-widest;
+  background-color: rgb(209 250 229); /* emerald-100 */
+  color: rgb(4 120 87); /* emerald-700 */
+}
+
+:global(.dark) .heroTag {
+  background-color: rgb(6 78 59 / 0.4); /* emerald-900/40 */
+  color: rgb(110 231 183); /* emerald-300 */
 }
 
 .heroTitle {
-  @apply max-w-3xl text-5xl font-extrabold tracking-tight text-slate-900 lg:text-6xl;
+  @apply max-w-3xl text-5xl font-extrabold tracking-tight lg:text-6xl;
+  color: hsl(var(--foreground));
 }
 
 .heroSubtitle {
-  @apply max-w-xl text-lg leading-relaxed text-slate-500;
+  @apply max-w-xl text-lg leading-relaxed;
+  color: hsl(var(--muted-foreground));
 }
 
 .heroCta {
-  @apply bg-emerald-600 px-10 hover:bg-emerald-700;
+  @apply px-10;
+  background-color: rgb(5 150 105); /* emerald-600 */
+}
+
+.heroCta:hover {
+  background-color: rgb(4 120 87); /* emerald-700 */
+}
+
+:global(.dark) .heroCta {
+  background-color: rgb(16 185 129); /* emerald-500 */
+}
+
+:global(.dark) .heroCta:hover {
+  background-color: rgb(5 150 105); /* emerald-600 */
 }
 
 /* ── Shared section layout ── */
@@ -43,11 +83,13 @@
 }
 
 .sectionTitle {
-  @apply text-3xl font-bold text-slate-900;
+  @apply text-3xl font-bold;
+  color: hsl(var(--foreground));
 }
 
 .sectionSubtitle {
-  @apply mt-2 text-slate-500;
+  @apply mt-2;
+  color: hsl(var(--muted-foreground));
 }
 
 /* ── How it works ── */
@@ -57,19 +99,28 @@
 }
 
 .stepCard {
-  @apply flex flex-col gap-3 rounded-lg border border-t-4 border-slate-200 border-t-emerald-500 p-6;
+  @apply flex flex-col gap-3 rounded-lg border border-t-4 p-6;
+  border-color: hsl(var(--border));
+  border-top-color: rgb(16 185 129); /* emerald-500 */
 }
 
 .stepNumber {
-  @apply text-xs font-bold uppercase tracking-widest text-emerald-600;
+  @apply text-xs font-bold uppercase tracking-widest;
+  color: rgb(5 150 105); /* emerald-600 */
+}
+
+:global(.dark) .stepNumber {
+  color: rgb(52 211 153); /* emerald-400 */
 }
 
 .cardTitle {
-  @apply text-lg font-semibold text-slate-900;
+  @apply text-lg font-semibold;
+  color: hsl(var(--foreground));
 }
 
 .cardDescription {
-  @apply text-sm leading-relaxed text-slate-500;
+  @apply text-sm leading-relaxed;
+  color: hsl(var(--muted-foreground));
 }
 
 /* ── Why section ── */
@@ -79,27 +130,38 @@
 }
 
 .featureCard {
-  @apply flex flex-col gap-2 rounded-lg border-l-4 border-emerald-500 bg-slate-50 p-5;
+  @apply flex flex-col gap-2 rounded-lg border-l-4 p-5;
+  border-left-color: rgb(16 185 129); /* emerald-500 */
+  background-color: hsl(var(--muted));
 }
 
 .featureTitle {
-  @apply font-semibold text-slate-900;
+  @apply font-semibold;
+  color: hsl(var(--foreground));
 }
 
 .featureDescription {
-  @apply text-sm leading-relaxed text-slate-500;
+  @apply text-sm leading-relaxed;
+  color: hsl(var(--muted-foreground));
 }
 
 /* ── Bottom CTA ── */
 
 .cta {
-  @apply flex flex-col items-center gap-5 rounded-2xl bg-emerald-50 py-16 text-center;
+  @apply flex flex-col items-center gap-5 rounded-2xl py-16 text-center;
+  background-color: rgb(209 250 229 / 0.5); /* emerald-100/50 */
+}
+
+:global(.dark) .cta {
+  background-color: rgb(2 44 34 / 0.4); /* emerald-950/40 */
 }
 
 .ctaTitle {
-  @apply text-3xl font-bold text-slate-900;
+  @apply text-3xl font-bold;
+  color: hsl(var(--foreground));
 }
 
 .ctaSubtitle {
-  @apply max-w-md text-slate-500;
+  @apply max-w-md;
+  color: hsl(var(--muted-foreground));
 }
