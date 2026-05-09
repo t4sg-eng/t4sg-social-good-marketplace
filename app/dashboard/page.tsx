@@ -1,6 +1,8 @@
 import { TypographyH2, TypographyP } from "@/components/ui/typography";
 import { createServerSupabaseClient } from "@/lib/server-utils";
 import { redirect } from "next/navigation";
+import { OpportunityCard } from "@/components/ui/opportunity-card";
+
 
 export default async function Dashboard() {
   // Create supabase server component client and obtain user session from Supabase Auth
@@ -29,6 +31,27 @@ export default async function Dashboard() {
       <TypographyH2>Dashboard</TypographyH2>
       <TypographyP>This is a protected route accessible only to signed-in users.</TypographyP>
       {userEmail && <TypographyP>{`Your email is ${userEmail}`}</TypographyP>}
+      <div></div>
+
+
+
+      <div className="grid grid-cols-3 gap-4 p-6">
+        <OpportunityCard
+      title="Build a donor portal"
+      nonprofit="Green Future"
+      description="Help us create a web portal for tracking donations."
+      skills="React, TypeScript"/>
+      <OpportunityCard
+      title="Build a donor portal"
+      nonprofit="Green Future"
+      description="Help us create a web portal for tracking donations."
+      skills="React, TypeScript"/>
+      <OpportunityCard
+      title="Build a donor portal"
+      nonprofit="Green Future"
+      description="Help us create a web portal for tracking donations."
+      skills="React, TypeScript"/>
+      </div>
     </>
   );
 }
