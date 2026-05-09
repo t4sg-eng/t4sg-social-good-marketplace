@@ -1,8 +1,41 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 
 export interface Database {
   public: {
     Tables: {
+      opportunities: {
+        Row: {
+          id: string;
+          title: string;
+          nonprofit: string;
+          description: string;
+          skills: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          nonprofit: string;
+          description: string;
+          skills: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          nonprofit?: string;
+          description?: string;
+          skills?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;
