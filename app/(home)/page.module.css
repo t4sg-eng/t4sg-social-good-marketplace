@@ -1,0 +1,105 @@
+/* ============================================================
+   Landing page styles
+   All Tailwind utilities are applied here via @apply so that
+   page.tsx contains zero inline class strings.
+   ============================================================ */
+
+/* ── Root ── */
+
+.main {
+  @apply flex flex-col gap-28;
+}
+
+/* ── Hero ── */
+
+.hero {
+  @apply flex flex-col items-center gap-6 pt-12 text-center;
+}
+
+.heroTag {
+  @apply rounded-full bg-emerald-100 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-700;
+}
+
+.heroTitle {
+  @apply max-w-3xl text-5xl font-extrabold tracking-tight text-slate-900 lg:text-6xl;
+}
+
+.heroSubtitle {
+  @apply max-w-xl text-lg leading-relaxed text-slate-500;
+}
+
+.heroCta {
+  @apply bg-emerald-600 px-10 hover:bg-emerald-700;
+}
+
+/* ── Shared section layout ── */
+
+.section {
+  @apply flex flex-col gap-10;
+}
+
+.sectionHeader {
+  @apply text-center;
+}
+
+.sectionTitle {
+  @apply text-3xl font-bold text-slate-900;
+}
+
+.sectionSubtitle {
+  @apply mt-2 text-slate-500;
+}
+
+/* ── How it works ── */
+
+.stepsGrid {
+  @apply grid grid-cols-1 gap-6 md:grid-cols-3;
+}
+
+.stepCard {
+  @apply flex flex-col gap-3 rounded-lg border border-t-4 border-slate-200 border-t-emerald-500 p-6;
+}
+
+.stepNumber {
+  @apply text-xs font-bold uppercase tracking-widest text-emerald-600;
+}
+
+.cardTitle {
+  @apply text-lg font-semibold text-slate-900;
+}
+
+.cardDescription {
+  @apply text-sm leading-relaxed text-slate-500;
+}
+
+/* ── Why section ── */
+
+.featuresGrid {
+  @apply grid grid-cols-1 gap-5 md:grid-cols-2;
+}
+
+.featureCard {
+  @apply flex flex-col gap-2 rounded-lg border-l-4 border-emerald-500 bg-slate-50 p-5;
+}
+
+.featureTitle {
+  @apply font-semibold text-slate-900;
+}
+
+.featureDescription {
+  @apply text-sm leading-relaxed text-slate-500;
+}
+
+/* ── Bottom CTA ── */
+
+.cta {
+  @apply flex flex-col items-center gap-5 rounded-2xl bg-emerald-50 py-16 text-center;
+}
+
+.ctaTitle {
+  @apply text-3xl font-bold text-slate-900;
+}
+
+.ctaSubtitle {
+  @apply max-w-md text-slate-500;
+}
