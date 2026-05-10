@@ -16,6 +16,8 @@ export interface Database {
           nonprofit: string;
           description: string;
           skills: string;
+          contact_email: string;
+          t4sg_verified: boolean;
           created_at: string;
         };
         Insert: {
@@ -24,6 +26,8 @@ export interface Database {
           nonprofit: string;
           description: string;
           skills: string;
+          contact_email: string;
+          t4sg_verified?: boolean;
           created_at?: string;
         };
         Update: {
@@ -32,6 +36,8 @@ export interface Database {
           nonprofit?: string;
           description?: string;
           skills?: string;
+          contact_email?: string;
+          t4sg_verified?: boolean;
           created_at?: string;
         };
         Relationships: [];

@@ -1,9 +1,9 @@
+import { AddOpportunityModal } from "@/components/ui/add-opportunity-modal";
 import { OpportunityCard } from "@/components/ui/opportunity-card";
 import { TypographyH2, TypographyP } from "@/components/ui/typography";
 import type { Database } from "@/lib/schema";
 import { createServerSupabaseClient } from "@/lib/server-utils";
 import { redirect } from "next/navigation";
-
 type Opportunity = Database["public"]["Tables"]["opportunities"]["Row"];
 
 export default async function Dashboard() {
@@ -43,7 +43,10 @@ export default async function Dashboard() {
 
   return (
     <>
-      <TypographyH2>Dashboard</TypographyH2>
+      <div className="flex items-center justify-between">
+        <TypographyH2>Dashboard</TypographyH2>
+        <AddOpportunityModal />
+      </div>
       <TypographyP>
         Browse open nonprofit project opportunities below.
       </TypographyP>
@@ -57,6 +60,8 @@ export default async function Dashboard() {
               nonprofit={opportunity.nonprofit}
               description={opportunity.description}
               skills={opportunity.skills}
+              contact_email={opportunity.contact_email}
+              t4sg_verified={opportunity.t4sg_verified}
             />
           ))}
         </div>
