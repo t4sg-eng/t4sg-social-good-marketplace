@@ -34,31 +34,37 @@ export const createServerSupabaseClient = () => {
   const cookieStore = cookies();
 
   // Injects type dependencies from database schema (<Database>)
-  const supabase = createServerClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
-      },
-      set(name: string, value: string, options: CookieOptions) {
-        try {
-          cookieStore.set({ name, value, ...options });
-        } catch (error) {
-          // The `set` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
-        }
-      },
-      remove(name: string, options: CookieOptions) {
-        try {
-          cookieStore.set({ name, value: "", ...options });
-        } catch (error) {
-          // The `delete` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
-        }
+  const supabase = createServerClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // The `set` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            cookieStore.set({ name, value: "", ...options });
+          } catch (error) {
+            // The `delete` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
       },
     },
-  });
+  );
   return supabase;
 
   /*
@@ -102,6 +108,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           request.cookies.set({
             name,
             value,
@@ -112,6 +119,7 @@ export async function updateSession(request: NextRequest) {
               headers: request.headers,
             },
           });
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           response.cookies.set({
             name,
             value,
@@ -119,6 +127,7 @@ export async function updateSession(request: NextRequest) {
           });
         },
         remove(name: string, options: CookieOptions) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           request.cookies.set({
             name,
             value: "",
@@ -129,6 +138,7 @@ export async function updateSession(request: NextRequest) {
               headers: request.headers,
             },
           });
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           response.cookies.set({
             name,
             value: "",

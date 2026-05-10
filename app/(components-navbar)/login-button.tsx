@@ -29,5 +29,13 @@ export default function LoginButton() {
 
     return;
   };
-  return <Button onClick={handleSignIn}>Log in with GitHub</Button>;
+  return (
+    <Button
+      onClick={() => {
+        void handleSignIn();
+      }}
+    >
+      Log in with GitHub
+    </Button>
+  );
 }

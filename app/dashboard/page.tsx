@@ -34,7 +34,6 @@ export default async function Dashboard() {
     .returns<Opportunity[]>();
 
   if (error) {
-    console.error("Error fetching opportunities:", error.message);
     return (
       <TypographyP>
         Failed to load opportunities. Please try again later.

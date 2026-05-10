@@ -14,7 +14,6 @@ import "client-only";
  * "use client" directive!
  */
 
-import { env } from "@/env.mjs";
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "./schema";
 
@@ -27,9 +26,9 @@ import type { Database } from "./schema";
  * createClient function.
  */
 
-export const createBrowserSupabaseClient = () => {
-  // Injects type dependencies from database schema (<Database>)
-  const supabaseClient = createBrowserClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-
-  return supabaseClient;
-};
+export function createBrowserSupabaseClient() {
+  return createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+}

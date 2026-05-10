@@ -27,10 +27,15 @@ export function delay(milliseconds: number) {
 // This can be used in both client and server components, just pass in the corresponding supabase client as a prop.
 // Also note the structure of the function typing and return, which ensures that errors from supabase MUST be handled whenever this query is used in a component.
 export async function getUserProfile(
-  supabase: Pick<SupabaseClient<any, any, any, any>, "from">,
+  supabase: Pick<SupabaseClient<Database>, "from">,
   user: User,
-): Promise<{ profile: Profile; error: null } | { profile: null; error: Error }> {
-  const { data, error } = await supabase.from("profiles").select().eq("id", user.id);
+): Promise<
+  { profile: Profile; error: null } | { profile: null; error: Error }
+> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select()
+    .eq("id", user.id);
 
   if (error) {
     return {
@@ -42,7 +47,9 @@ export async function getUserProfile(
   if (data.length !== 1) {
     return {
       profile: null,
-      error: new Error("There are duplicate UUIDs. Please contact system administrator"),
+      error: new Error(
+        "There are duplicate UUIDs. Please contact system administrator",
+      ),
     };
   }
 

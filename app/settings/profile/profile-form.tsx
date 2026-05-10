@@ -5,7 +5,15 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
@@ -36,6 +44,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
 export default function ProfileForm({ profile }: { profile: Profile }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -60,9 +69,15 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
 
   const onSubmit = async (data: ProfileFormValues) => {
     const supabase = createBrowserSupabaseClient();
+
+    const updates: ProfileUpdate = {
+      username: data.username,
+      avatar_url: data.avatar_url,
+    };
+
     const { error } = await supabase
       .from("profiles")
-      .update({ username: data.username, avatar_url: data.avatar_url })
+      .update(updates as never)
       .eq("id", profile.id);
 
     if (error) {
@@ -100,7 +115,12 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e: BaseSyntheticEvent) => void form.handleSubmit(onSubmit)(e)} className="space-y-8">
+      <form
+        onSubmit={(e: BaseSyntheticEvent) =>
+          void form.handleSubmit(onSubmit)(e)
+        }
+        className="space-y-8"
+      >
         <FormField
           control={form.control}
           name="username"
@@ -108,10 +128,15 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
             <FormItem>
               <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input readOnly={!isEditing} placeholder="Username" {...field} />
+                <Input
+                  readOnly={!isEditing}
+                  placeholder="Username"
+                  {...field}
+                />
               </FormControl>
               <FormDescription>
-                This is your public username. It can be your real name or a pseudonym.
+                This is your public username. It can be your real name or a
+                pseudonym.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -125,9 +150,16 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
               <FormItem>
                 <FormLabel>Avatar URL</FormLabel>
                 <FormControl>
-                  <Input readOnly={!isEditing} placeholder="https://..." {...field} />
+                  <Input
+                    readOnly={!isEditing}
+                    placeholder="https://..."
+                    {...field}
+                    value={field.value ?? ""}
+                  />
                 </FormControl>
-                <FormDescription>A URL to your profile picture.</FormDescription>
+                <FormDescription>
+                  A URL to your profile picture.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             );
