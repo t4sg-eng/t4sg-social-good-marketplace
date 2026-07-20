@@ -86,7 +86,7 @@ npm install
 #### (3) Supabase Connection Setup
 
 1. Create a free account at [supabase.com](https://supabase.com) and start a new project.
-2. In your Supabase project, go to **Project Settings → API** and copy the **Project URL** and **anon public key**.
+2. In your Supabase project, go to **Project Overview** and copy the **Project URL** and **Publishable key**.
 3. Copy the `env.example` file to `.env.local`:
    ```bash
    cp env.example .env.local
