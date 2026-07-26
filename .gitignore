@@ -27,6 +27,9 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# local next.js config overrides
+next.config.local.js
+
 # vercel
 .vercel
 

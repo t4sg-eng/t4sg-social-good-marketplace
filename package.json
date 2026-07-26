@@ -29,7 +29,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-toast": "^1.1.5",
     "@supabase/ssr": "^0.3.0",
-    "@supabase/supabase-js": "^2.43.5",
+    "@supabase/supabase-js": "^2.110.8",
     "@t3-oss/env-nextjs": "^0.10.1",
     "class-variance-authority": "^0.7.0",
     "client-only": "^0.0.1",
@@ -65,7 +65,7 @@
     "prettier": "^3.3.2",
     "prettier-plugin-organize-imports": "^3.2.4",
     "prettier-plugin-tailwindcss": "^0.6.5",
-    "supabase": "^1.176.10",
+    "supabase": "^1.226.4",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5"
   }

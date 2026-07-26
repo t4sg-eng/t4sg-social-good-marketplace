@@ -86,10 +86,10 @@ export function AddOpportunityModal() {
       <Modal open={open} onClose={handleClose}>
         <div className="flex flex-col gap-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 className="text-xl font-bold text-foreground">
               Add Opportunity
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               Fill in the details for the new opportunity.
             </p>
           </div>
