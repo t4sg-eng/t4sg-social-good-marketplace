@@ -7,18 +7,12 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Modal from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/textarea";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
+import { Plus } from "lucide-react";
 
 const opportunitySchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -76,21 +70,18 @@ export function AddOpportunityModal() {
 
   return (
     <>
-      <Button
-        onClick={() => setOpen(true)}
-        className="bg-emerald-600 hover:bg-emerald-700"
-      >
-        + Add Opportunity
+      <Button onClick={() => setOpen(true)}>
+        <Plus className="mr-1.5 h-4 w-4" />
+        Post a project
       </Button>
 
       <Modal open={open} onClose={handleClose}>
-        <div className="flex flex-col gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">
-              Add Opportunity
-            </h2>
-            <p className="text-sm text-slate-500">
-              Fill in the details for the new opportunity.
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-1.5">
+            <p className="kicker">New project</p>
+            <h2 className="font-display text-xl font-bold text-foreground">Post a project to the queue</h2>
+            <p className="text-sm text-muted-foreground">
+              Tell engineers what the nonprofit needs. It goes live for review once you submit.
             </p>
           </div>
 
@@ -131,10 +122,7 @@ export function AddOpportunityModal() {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Describe the opportunity..."
-                        {...field}
-                      />
+                      <Textarea placeholder="Describe the opportunity..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -148,10 +136,7 @@ export function AddOpportunityModal() {
                   <FormItem>
                     <FormLabel>Skills</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="e.g. React, Python, Design"
-                        {...field}
-                      />
+                      <Input placeholder="e.g. React, Python, Design" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -165,11 +150,7 @@ export function AddOpportunityModal() {
                   <FormItem>
                     <FormLabel>Nonprofit Contact Email</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="contact@nonprofit.org"
-                        {...field}
-                      />
+                      <Input type="email" placeholder="contact@nonprofit.org" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -177,21 +158,15 @@ export function AddOpportunityModal() {
               />
 
               {form.formState.errors.root && (
-                <p className="text-sm font-medium text-destructive">
-                  {form.formState.errors.root.message}
-                </p>
+                <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
               )}
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={handleClose}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  {isSubmitting ? "Adding..." : "Add Opportunity"}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Posting…" : "Post project"}
                 </Button>
               </div>
             </form>

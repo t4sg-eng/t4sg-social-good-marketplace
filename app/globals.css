@@ -2,70 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Social Good Marketplace — "The Open Queue"
+   Ink-on-paper editorial base · single crimson accent ·
+   evergreen/clay reserved strictly for status meaning.
+   Tokens are HSL channels consumed as hsl(var(--x) / <alpha>).
+   ============================================================ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 40 42.9% 97.3%; /* warm paper */
+    --foreground: 45 8% 9.8%; /* ink */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 41.3 36.4% 91.4%;
+    --muted-foreground: 36.7 9.2% 38.4%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 45 8% 9.8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 45 8% 9.8%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 38.8 26.2% 87.3%;
+    --input: 38.8 26.2% 87.3%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 349.5 70.8% 36.3%; /* crimson */
+    --primary-foreground: 40 42.9% 97.3%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 41.3 36.4% 91.4%;
+    --secondary-foreground: 45 8% 9.8%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 41.3 36.4% 91.4%;
+    --accent-foreground: 45 8% 9.8%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 357.7 66.4% 45.5%;
+    --destructive-foreground: 40 42.9% 97.3%;
 
-    --ring: 215 20.2% 65.1%;
+    --ring: 349.5 70.8% 36.3%;
+
+    /* Status + brand extras */
+    --evergreen: 152 39.5% 29.8%;
+    --evergreen-soft: 136.4 25.6% 91.6%;
+    --clay: 29.1 77% 34.1%;
+    --clay-soft: 35.6 59.3% 89.4%;
 
     --radius: 0.5rem;
   }
 
   .dark,
   [data-theme="dark"] {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 40 13% 9%;
+    --foreground: 41.3 36.4% 91.4%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 38.2 15.1% 14.3%;
+    --muted-foreground: 38.6 13.7% 60%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 40 15.3% 11.6%;
+    --popover-foreground: 41.3 36.4% 91.4%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 40 15.3% 11.6%;
+    --card-foreground: 41.3 36.4% 91.4%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 40 13.3% 17.6%;
+    --input: 40 13.3% 17.6%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 348.8 65.6% 64.7%; /* crimson, brightened for dark */
+    --primary-foreground: 40 13% 9%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 38.2 15.1% 14.3%;
+    --secondary-foreground: 41.3 36.4% 91.4%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 38.2 15.1% 14.3%;
+    --accent-foreground: 41.3 36.4% 91.4%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 85.7% 97.3%;
+    --destructive: 0.4 72% 63.5%;
+    --destructive-foreground: 40 13% 9%;
 
-    --ring: 217.2 32.6% 17.5%;
+    --ring: 348.8 65.6% 64.7%;
+
+    --evergreen: 147.3 37.8% 59%;
+    --evergreen-soft: 150 19% 16.5%;
+    --clay: 30 65% 54.1%;
+    --clay-soft: 30 34.2% 14.9%;
   }
 }
 
@@ -75,5 +93,52 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "cv01";
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Typographic defaults for the display face */
+  h1,
+  h2,
+  h3 {
+    font-feature-settings: "ss02";
+  }
+}
+
+@layer components {
+  /* Hairline "ledger" rule used across sections */
+  .ledger-rule {
+    background-image: repeating-linear-gradient(
+      to right,
+      hsl(var(--border)) 0,
+      hsl(var(--border)) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+    height: 1px;
+  }
+
+  /* Monospace eyebrow / kicker */
+  .kicker {
+    @apply font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground;
+  }
+
+  /* GitHub-style dotted skill label */
+  .label-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-0.5 font-mono text-[11px] leading-5 text-foreground/80;
+  }
+  .label-chip::before {
+    content: "";
+    @apply h-1.5 w-1.5 rounded-full bg-primary;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

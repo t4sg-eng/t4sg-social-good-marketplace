@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
+import { Github } from "lucide-react";
 
 export default function LoginButton() {
   const supabase = createBrowserSupabaseClient();
@@ -31,10 +32,12 @@ export default function LoginButton() {
   };
   return (
     <Button
+      size="lg"
       onClick={() => {
         void handleSignIn();
       }}
     >
+      <Github className="mr-2 h-4 w-4" />
       Log in with GitHub
     </Button>
   );
