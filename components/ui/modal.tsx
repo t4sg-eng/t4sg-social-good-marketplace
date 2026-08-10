@@ -36,7 +36,7 @@ export default function Modal({ open, onClose, children }: ModalProps) {
     >
       <div
         onClick={(e) => e.stopPropagation()} // Make the children and thing inside background unclickable
-        className={`relative mx-4 max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-2xl transition-all ${
+        className={`relative mx-4 max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-sm border border-border bg-card p-7 shadow-2xl transition-all ${
           open ? "scale-100 opacity-100" : "scale-95 opacity-0" // Use opacity and scale to make the modal have transition animation
         }`}
       >

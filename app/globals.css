@@ -3,87 +3,101 @@
 @tailwind utilities;
 
 /* ============================================================
-   Social Good Marketplace — "The Open Queue"
-   Ink-on-paper editorial base · single crimson accent ·
-   evergreen/clay reserved strictly for status meaning.
+   Social Good Marketplace — "Studio" (ui-experiments)
+   Editorial gallery layout · warm-neutral paper · high-contrast
+   serif · T4SG pastel gradient (mint → sky → periwinkle) as the
+   accent system. Every color is a token so /lab can retune it live.
    Tokens are HSL channels consumed as hsl(var(--x) / <alpha>).
    ============================================================ */
 
 @layer base {
   :root {
-    --background: 40 42.9% 97.3%; /* warm paper */
-    --foreground: 45 8% 9.8%; /* ink */
+    --background: 46.7 27.3% 93.5%;
+    --foreground: 60 6.7% 11.8%;
 
-    --muted: 41.3 36.4% 91.4%;
-    --muted-foreground: 36.7 9.2% 38.4%;
+    --card: 45 57.1% 97.3%;
+    --card-foreground: 60 6.7% 11.8%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 45 8% 9.8%;
+    --popover: 45 57.1% 97.3%;
+    --popover-foreground: 60 6.7% 11.8%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 45 8% 9.8%;
+    --muted: 42 32.3% 87.8%;
+    --muted-foreground: 40 10.4% 39.4%;
 
-    --border: 38.8 26.2% 87.3%;
-    --input: 38.8 26.2% 87.3%;
+    --border: 40.9 25% 82.7%;
+    --input: 40.9 25% 82.7%;
 
-    --primary: 349.5 70.8% 36.3%; /* crimson */
-    --primary-foreground: 40 42.9% 97.3%;
+    --primary: 212.9 50.5% 40.4%;
+    --primary-foreground: 50 42.9% 97.3%;
 
-    --secondary: 41.3 36.4% 91.4%;
-    --secondary-foreground: 45 8% 9.8%;
+    --secondary: 42 32.3% 87.8%;
+    --secondary-foreground: 60 6.7% 11.8%;
 
-    --accent: 41.3 36.4% 91.4%;
-    --accent-foreground: 45 8% 9.8%;
+    --accent: 42 32.3% 87.8%;
+    --accent-foreground: 60 6.7% 11.8%;
 
-    --destructive: 357.7 66.4% 45.5%;
-    --destructive-foreground: 40 42.9% 97.3%;
+    /* T4SG pastel accents */
+    --mint: 144.4 36% 65.1%;
+    --sky: 205.5 67.1% 72.5%;
+    --peri: 229.9 58.8% 74.3%;
 
-    --ring: 349.5 70.8% 36.3%;
+    /* Status */
+    --success: 152.5 50.5% 37.3%;
+    --success-soft: 141.2 32.1% 89.6%;
+    --warning: 30.7 74% 34.7%;
+    --warning-soft: 38 51.7% 88.6%;
+    --danger: 4.6 57.5% 44.3%;
+    --danger-soft: 12 49% 90%;
 
-    /* Status + brand extras */
-    --evergreen: 152 39.5% 29.8%;
-    --evergreen-soft: 136.4 25.6% 91.6%;
-    --clay: 29.1 77% 34.1%;
-    --clay-soft: 35.6 59.3% 89.4%;
+    --destructive: 4.6 57.5% 44.3%;
+    --destructive-foreground: 50 42.9% 97.3%;
 
-    --radius: 0.5rem;
+    --ring: 212.9 50.5% 40.4%;
+
+    --radius: 0.25rem;
   }
 
   .dark,
   [data-theme="dark"] {
-    --background: 40 13% 9%;
-    --foreground: 41.3 36.4% 91.4%;
+    --background: 40 12.5% 9.4%;
+    --foreground: 41.1 38.8% 90.4%;
 
-    --muted: 38.2 15.1% 14.3%;
-    --muted-foreground: 38.6 13.7% 60%;
+    --card: 42 16.7% 11.8%;
+    --card-foreground: 41.1 38.8% 90.4%;
 
-    --popover: 40 15.3% 11.6%;
-    --popover-foreground: 41.3 36.4% 91.4%;
+    --popover: 42 16.7% 11.8%;
+    --popover-foreground: 41.1 38.8% 90.4%;
 
-    --card: 40 15.3% 11.6%;
-    --card-foreground: 41.3 36.4% 91.4%;
+    --muted: 38.2 14.7% 14.7%;
+    --muted-foreground: 40 13.3% 60.2%;
 
-    --border: 40 13.3% 17.6%;
-    --input: 40 13.3% 17.6%;
+    --border: 32.7 11.6% 18.6%;
+    --input: 32.7 11.6% 18.6%;
 
-    --primary: 348.8 65.6% 64.7%; /* crimson, brightened for dark */
-    --primary-foreground: 40 13% 9%;
+    --primary: 210.9 65.2% 69.6%;
+    --primary-foreground: 40 12.5% 9.4%;
 
-    --secondary: 38.2 15.1% 14.3%;
-    --secondary-foreground: 41.3 36.4% 91.4%;
+    --secondary: 38.2 14.7% 14.7%;
+    --secondary-foreground: 41.1 38.8% 90.4%;
 
-    --accent: 38.2 15.1% 14.3%;
-    --accent-foreground: 41.3 36.4% 91.4%;
+    --accent: 38.2 14.7% 14.7%;
+    --accent-foreground: 41.1 38.8% 90.4%;
+
+    --mint: 149.6 35.4% 62.9%;
+    --sky: 206.4 70.4% 72.2%;
+    --peri: 230.5 60.3% 75.3%;
+
+    --success: 147.3 37.8% 59%;
+    --success-soft: 150 19% 16.5%;
+    --warning: 30 65% 54.1%;
+    --warning-soft: 28.8 32.5% 15.1%;
+    --danger: 0.4 72% 63.5%;
+    --danger-soft: 6.9 28.9% 17.6%;
 
     --destructive: 0.4 72% 63.5%;
-    --destructive-foreground: 40 13% 9%;
+    --destructive-foreground: 40 12.5% 9.4%;
 
-    --ring: 348.8 65.6% 64.7%;
-
-    --evergreen: 147.3 37.8% 59%;
-    --evergreen-soft: 150 19% 16.5%;
-    --clay: 30 65% 54.1%;
-    --clay-soft: 30 34.2% 14.9%;
+    --ring: 210.9 65.2% 69.6%;
   }
 }
 
@@ -93,42 +107,68 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01", "cv01";
     -webkit-font-smoothing: antialiased;
-  }
-  /* Typographic defaults for the display face */
-  h1,
-  h2,
-  h3 {
-    font-feature-settings: "ss02";
   }
 }
 
 @layer components {
-  /* Hairline "ledger" rule used across sections */
-  .ledger-rule {
-    background-image: repeating-linear-gradient(
-      to right,
-      hsl(var(--border)) 0,
-      hsl(var(--border)) 6px,
-      transparent 6px,
-      transparent 12px
+  /* Letter-spaced caption label, gallery vernacular */
+  .caps {
+    @apply font-sans text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground;
+  }
+
+  /* Editorial italic parenthetical annotation */
+  .annot {
+    @apply font-serif text-sm italic text-muted-foreground;
+  }
+
+  /* The T4SG signature: mint → sky → periwinkle gradient */
+  .t4sg-gradient {
+    background-image: linear-gradient(
+      100deg,
+      hsl(var(--mint)),
+      hsl(var(--sky)) 55%,
+      hsl(var(--peri))
     );
-    height: 1px;
+  }
+  .gradient-text {
+    background-image: linear-gradient(
+      100deg,
+      hsl(var(--mint)),
+      hsl(var(--sky)) 50%,
+      hsl(var(--peri))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
-  /* Monospace eyebrow / kicker */
-  .kicker {
-    @apply font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground;
+  /* Halftone dot field, echoing the member-card motif */
+  .dot-field {
+    background-image: radial-gradient(
+      hsl(var(--peri) / 0.5) 1.1px,
+      transparent 1.2px
+    );
+    background-size: 11px 11px;
   }
 
-  /* GitHub-style dotted skill label */
-  .label-chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-0.5 font-mono text-[11px] leading-5 text-foreground/80;
+  /* Gallery tile: hairline frame, no radius, HOVN-style */
+  .tile {
+    @apply relative border border-border bg-card transition-colors;
   }
-  .label-chip::before {
-    content: "";
-    @apply h-1.5 w-1.5 rounded-full bg-primary;
+
+  /* Marquee ticker (meli-style) */
+  .marquee {
+    @apply flex w-max items-center gap-0;
+    animation: marquee 38s linear infinite;
+  }
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
   }
 }
 
@@ -140,5 +180,9 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .marquee {
+    animation: none !important;
+    transform: none !important;
   }
 }

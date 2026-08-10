@@ -1,7 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    './pages/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
+	],
   theme: {
     container: {
       center: true,
@@ -12,9 +17,11 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "Georgia", "ui-serif", "serif"],
+        // `display` aliases the serif so inherited Typography components stay on-brand.
+        display: ["var(--font-serif)", "Georgia", "ui-serif", "serif"],
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
+        script: ["var(--font-script)", "ui-serif", "cursive"],
       },
       colors: {
         border: "hsl(var(--border) / <alpha-value>)",
@@ -50,13 +57,20 @@ module.exports = {
           DEFAULT: "hsl(var(--card) / <alpha-value>)",
           foreground: "hsl(var(--card-foreground) / <alpha-value>)",
         },
-        evergreen: {
-          DEFAULT: "hsl(var(--evergreen) / <alpha-value>)",
-          soft: "hsl(var(--evergreen-soft) / <alpha-value>)",
+        mint: "hsl(var(--mint) / <alpha-value>)",
+        sky: "hsl(var(--sky) / <alpha-value>)",
+        peri: "hsl(var(--peri) / <alpha-value>)",
+        success: {
+          DEFAULT: "hsl(var(--success) / <alpha-value>)",
+          soft: "hsl(var(--success-soft) / <alpha-value>)",
         },
-        clay: {
-          DEFAULT: "hsl(var(--clay) / <alpha-value>)",
-          soft: "hsl(var(--clay-soft) / <alpha-value>)",
+        warning: {
+          DEFAULT: "hsl(var(--warning) / <alpha-value>)",
+          soft: "hsl(var(--warning-soft) / <alpha-value>)",
+        },
+        danger: {
+          DEFAULT: "hsl(var(--danger) / <alpha-value>)",
+          soft: "hsl(var(--danger-soft) / <alpha-value>)",
         },
       },
       borderRadius: {
@@ -73,17 +87,17 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        rise: {
-          from: { opacity: "0", transform: "translateY(12px)" },
+        "rise": {
+          from: { opacity: "0", transform: "translateY(14px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        rise: "rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "rise": "rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both",
       },
     },
   },
   plugins: [require("tailwindcss-animate")],
-};
+}
