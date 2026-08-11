@@ -33,8 +33,7 @@
     "**/*.cjs",
     "**/*.mjs",
     ".eslintrc.cjs",
-    "next.config.ts",
-    "next.config.local.d.ts",
+    "next.config.js",
   ],
   "exclude": ["node_modules"],
 }
