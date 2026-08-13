@@ -36,18 +36,20 @@ export default function Modal({ open, onClose, children }: ModalProps) {
     >
       <div
         onClick={(e) => e.stopPropagation()} // Make the children and thing inside background unclickable
-        className={`relative mx-4 w-full max-w-lg rounded-lg bg-white p-6 shadow-xl transition-all ${
+        className={`relative mx-4 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-xl transition-all dark:bg-secondary dark:text-secondary-foreground ${
           open ? "scale-100 opacity-100" : "scale-95 opacity-0" // Use opacity and scale to make the modal have transition animation
         }`}
       >
         <button
           onClick={onClose} // on close X button
-          className="absolute right-3 top-3 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          className="absolute right-3 top-3 z-10 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           aria-label="Close"
         >
           <X className="h-5 w-5" />
         </button>
-        {children}
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-6 pt-10">
+          {children}
+        </div>
       </div>
     </div>
   );
