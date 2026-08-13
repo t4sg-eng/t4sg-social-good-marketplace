@@ -98,9 +98,7 @@ export function OpportunityCard({
               </span>
             )}
           </div>
-          <Button className="w-full bg-emerald-600 hover:bg-emerald-700">
-            I&apos;m interested
-          </Button>
+          <Button className="w-full bg-emerald-600 hover:bg-emerald-700">I&apos;m interested</Button>
         </div>
       </Modal>
     </>
