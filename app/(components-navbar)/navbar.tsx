@@ -13,37 +13,38 @@ export default async function Navbar({
     data: { user },
   } = await supabase.auth.getUser();
 
+  const linkClass =
+    "font-serif text-[0.95rem] text-muted-foreground transition-colors hover:text-primary";
+
   return (
-    <nav
-      className={cn("flex w-full items-center justify-between", className)}
-      {...props}
-    >
-      <Link href="/" className="transition-opacity hover:opacity-75">
+    <nav className={cn("flex items-center gap-7", className)} {...props}>
+      <Link
+        href="/"
+        aria-label="Tech for Social Good — home"
+        className="shrink-0 transition-opacity hover:opacity-70"
+      >
         <Image
           src="/t4sglogo.webp"
-          alt="T4SG Home"
-          width={300}
-          height={300}
+          alt="Harvard Computer Society — Tech for Social Good"
+          width={160}
+          height={38}
           priority
+          className="h-[30px] w-auto dark:invert"
         />
       </Link>
 
-      <div className="flex items-center space-x-4 lg:space-x-6">
-        <Link
-          href="/"
-          className="text-xl font-medium transition-colors hover:text-primary"
-        >
-          Home
+      <div className="hidden items-center gap-6 sm:flex">
+        <Link href="/" className={linkClass}>
+          index
         </Link>
-
         {user && (
-          <Link
-            href="/dashboard"
-            className="text-xl font-medium transition-colors hover:text-primary"
-          >
-            Dashboard
+          <Link href="/dashboard" className={linkClass}>
+            projects
           </Link>
         )}
+        <Link href="/lab" className={linkClass}>
+          lab
+        </Link>
       </div>
     </nav>
   );

@@ -2,70 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Social Good Marketplace — "Studio" (ui-experiments)
+   Editorial gallery layout · warm-neutral paper · high-contrast
+   serif · T4SG pastel gradient (mint → sky → periwinkle) as the
+   accent system. Every color is a token so /lab can retune it live.
+   Tokens are HSL channels consumed as hsl(var(--x) / <alpha>).
+   ============================================================ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 46.7 27.3% 93.5%;
+    --foreground: 60 6.7% 11.8%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --card: 45 57.1% 97.3%;
+    --card-foreground: 60 6.7% 11.8%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 45 57.1% 97.3%;
+    --popover-foreground: 60 6.7% 11.8%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --muted: 42 32.3% 87.8%;
+    --muted-foreground: 40 10.4% 39.4%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 40.9 25% 82.7%;
+    --input: 40.9 25% 82.7%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 212.9 50.5% 40.4%;
+    --primary-foreground: 50 42.9% 97.3%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 42 32.3% 87.8%;
+    --secondary-foreground: 60 6.7% 11.8%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 42 32.3% 87.8%;
+    --accent-foreground: 60 6.7% 11.8%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* T4SG pastel accents */
+    --mint: 144.4 36% 65.1%;
+    --sky: 205.5 67.1% 72.5%;
+    --peri: 229.9 58.8% 74.3%;
 
-    --ring: 215 20.2% 65.1%;
+    /* Status */
+    --success: 152.5 50.5% 37.3%;
+    --success-soft: 141.2 32.1% 89.6%;
+    --warning: 30.7 74% 34.7%;
+    --warning-soft: 38 51.7% 88.6%;
+    --danger: 4.6 57.5% 44.3%;
+    --danger-soft: 12 49% 90%;
 
-    --radius: 0.5rem;
+    --destructive: 4.6 57.5% 44.3%;
+    --destructive-foreground: 50 42.9% 97.3%;
+
+    --ring: 212.9 50.5% 40.4%;
+
+    --radius: 0.25rem;
   }
 
   .dark,
   [data-theme="dark"] {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 40 12.5% 9.4%;
+    --foreground: 41.1 38.8% 90.4%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --card: 42 16.7% 11.8%;
+    --card-foreground: 41.1 38.8% 90.4%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 42 16.7% 11.8%;
+    --popover-foreground: 41.1 38.8% 90.4%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --muted: 38.2 14.7% 14.7%;
+    --muted-foreground: 40 13.3% 60.2%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 32.7 11.6% 18.6%;
+    --input: 32.7 11.6% 18.6%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 210.9 65.2% 69.6%;
+    --primary-foreground: 40 12.5% 9.4%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 38.2 14.7% 14.7%;
+    --secondary-foreground: 41.1 38.8% 90.4%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 38.2 14.7% 14.7%;
+    --accent-foreground: 41.1 38.8% 90.4%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 85.7% 97.3%;
+    --mint: 149.6 35.4% 62.9%;
+    --sky: 206.4 70.4% 72.2%;
+    --peri: 230.5 60.3% 75.3%;
 
-    --ring: 217.2 32.6% 17.5%;
+    --success: 147.3 37.8% 59%;
+    --success-soft: 150 19% 16.5%;
+    --warning: 30 65% 54.1%;
+    --warning-soft: 28.8 32.5% 15.1%;
+    --danger: 0.4 72% 63.5%;
+    --danger-soft: 6.9 28.9% 17.6%;
+
+    --destructive: 0.4 72% 63.5%;
+    --destructive-foreground: 40 12.5% 9.4%;
+
+    --ring: 210.9 65.2% 69.6%;
   }
 }
 
@@ -75,5 +107,82 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  /* Letter-spaced caption label, gallery vernacular */
+  .caps {
+    @apply font-sans text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground;
+  }
+
+  /* Editorial italic parenthetical annotation */
+  .annot {
+    @apply font-serif text-sm italic text-muted-foreground;
+  }
+
+  /* The T4SG signature: mint → sky → periwinkle gradient */
+  .t4sg-gradient {
+    background-image: linear-gradient(
+      100deg,
+      hsl(var(--mint)),
+      hsl(var(--sky)) 55%,
+      hsl(var(--peri))
+    );
+  }
+  .gradient-text {
+    background-image: linear-gradient(
+      100deg,
+      hsl(var(--mint)),
+      hsl(var(--sky)) 50%,
+      hsl(var(--peri))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Halftone dot field, echoing the member-card motif */
+  .dot-field {
+    background-image: radial-gradient(
+      hsl(var(--peri) / 0.5) 1.1px,
+      transparent 1.2px
+    );
+    background-size: 11px 11px;
+  }
+
+  /* Gallery tile: hairline frame, no radius, HOVN-style */
+  .tile {
+    @apply relative border border-border bg-card transition-colors;
+  }
+
+  /* Marquee ticker (meli-style) */
+  .marquee {
+    @apply flex w-max items-center gap-0;
+    animation: marquee 38s linear infinite;
+  }
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .marquee {
+    animation: none !important;
+    transform: none !important;
   }
 }

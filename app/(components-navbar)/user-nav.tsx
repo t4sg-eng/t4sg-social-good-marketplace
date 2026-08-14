@@ -12,17 +12,32 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
-import { type Database } from "@/lib/schema";
+import type { Database } from "@/lib/schema";
 import { LogOut, Settings, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type AppRole = Database["public"]["Enums"]["app_role"];
 
-export default function UserNav({ profile }: { profile: Profile }) {
-  // Create Supabase client (for client components)
+const ROLE_LABEL: Record<AppRole, string> = {
+  member: "Member",
+  swe: "Contributor",
+  npo: "Organizer",
+  admin: "Admin",
+};
+
+export default function UserNav({
+  displayName,
+  email,
+  avatarUrl,
+  role,
+}: {
+  displayName: string;
+  email: string | null;
+  avatarUrl: string | null;
+  role: AppRole;
+}) {
   const supabaseClient = createBrowserSupabaseClient();
-
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -33,26 +48,33 @@ export default function UserNav({ profile }: { profile: Profile }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            {profile.avatar_url ? <AvatarImage src={profile.avatar_url} alt={profile.username ?? "User"} /> : null}
-            <AvatarFallback>{(profile.username ?? "User").slice(0, 2).toUpperCase()}</AvatarFallback>
+        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+          <Avatar className="h-9 w-9">
+            {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
+            <AvatarFallback>
+              {displayName.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent className="w-60" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{profile.username ?? "User"}</p>
+            <p className="text-sm font-medium leading-none">{displayName}</p>
+            {email && (
+              <p className="text-xs leading-none text-muted-foreground">
+                {email}
+              </p>
+            )}
+            <p className="pt-1 caps">{ROLE_LABEL[role]}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {/* Using Next Link: https://github.com/radix-ui/primitives/issues/1105 */}
           <DropdownMenuItem asChild>
             <Link href="/settings/profile">
               <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
+              <span>Role &amp; profile</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
@@ -63,7 +85,6 @@ export default function UserNav({ profile }: { profile: Profile }) {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        {/* Mark promise as purposefully dangling for clarity: https://github.com/typescript-eslint/typescript-eslint/issues/4619 */}
         <DropdownMenuItem
           onClick={() => {
             void handleSignOut();

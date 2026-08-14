@@ -1,35 +1,27 @@
-import { createServerSupabaseClient } from "@/lib/server-utils";
-import { getUserProfile } from "@/lib/utils";
+import { getViewer } from "@/lib/roles";
 import LoginButton from "./login-button";
 import UserNav from "./user-nav";
 
 export default async function AuthStatus() {
-  // Create supabase server component client and obtain user session from Supabase Auth
-  const supabase = createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const viewer = await getViewer();
 
-  if (!user) {
+  if (!viewer) {
     return <LoginButton />;
   }
 
-  const { profile, error } = await getUserProfile(supabase, user);
+  const meta = viewer.user.user_metadata ?? {};
+  const displayName =
+    ((meta.full_name as string | undefined) ??
+      (meta.user_name as string | undefined) ??
+      viewer.user.email?.split("@")[0] ??
+      "You").trim() || "You";
 
-  if (error) {
-    const fallbackUsername = ((user.user_metadata?.user_name as string | undefined) ?? user.email?.split("@")[0] ?? "User")
-      .trim() || "User";
-
-    return (
-      <UserNav
-        profile={{
-          id: user.id,
-          username: fallbackUsername,
-          avatar_url: (user.user_metadata?.avatar_url as string | undefined) ?? null,
-        }}
-      />
-    );
-  }
-
-  return <UserNav profile={profile} />;
+  return (
+    <UserNav
+      displayName={displayName}
+      email={viewer.user.email ?? null}
+      avatarUrl={(meta.avatar_url as string | undefined) ?? null}
+      role={viewer.role}
+    />
+  );
 }

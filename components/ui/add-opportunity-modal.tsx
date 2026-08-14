@@ -18,15 +18,15 @@ import {
 import { Input } from "@/components/ui/input";
 import Modal from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/use-toast";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
 
 const opportunitySchema = z.object({
   title: z.string().min(1, "Title is required"),
   nonprofit: z.string().min(1, "Nonprofit name is required"),
   description: z.string().min(1, "Description is required"),
-  skills: z.string().min(1, "Skills are required"),
-  contact_email: z.string().email("Please enter a valid email address"),
-  t4sg_verified: z.boolean(),
+  skills: z.string().min(1, "List at least one skill"),
+  contact_email: z.string().email("Enter a valid email address"),
 });
 
 type OpportunityFormValues = z.infer<typeof opportunitySchema>;
@@ -44,7 +44,6 @@ export function AddOpportunityModal() {
       description: "",
       skills: "",
       contact_email: "",
-      t4sg_verified: false,
     },
   });
 
@@ -60,37 +59,39 @@ export function AddOpportunityModal() {
   async function onSubmit(values: OpportunityFormValues) {
     setIsSubmitting(true);
     const supabase = createBrowserSupabaseClient();
+    // created_by (auth.uid()) and status ('pending') are set by DB defaults.
     const { error } = await supabase.from("opportunities").insert(values);
     setIsSubmitting(false);
 
     if (error) {
       form.setError("root", {
-        message: "Failed to add opportunity. Please try again.",
+        message:
+          "Couldn't post the project. You may need approved organizer access.",
       });
       return;
     }
 
     handleClose();
+    toast({
+      title: "Project submitted",
+      description: "It'll appear in the gallery once an admin approves it.",
+    });
     router.refresh();
   }
 
   return (
     <>
-      <Button
-        onClick={() => setOpen(true)}
-        className="bg-emerald-600 hover:bg-emerald-700"
-      >
-        + Add Opportunity
-      </Button>
+      <Button onClick={() => setOpen(true)}>Post a project</Button>
 
       <Modal open={open} onClose={handleClose}>
-        <div className="flex flex-col gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-foreground">
-              Add Opportunity
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-1">
+            <p className="caps">New submission</p>
+            <h2 className="font-serif text-2xl font-medium text-foreground">
+              Post a project
             </h2>
-            <p className="text-sm text-muted-foreground">
-              Fill in the details for the new opportunity.
+            <p className="annot">
+              An admin reviews each submission before it joins the collection.
             </p>
           </div>
 
@@ -101,9 +102,12 @@ export function AddOpportunityModal() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title</FormLabel>
+                    <FormLabel className="caps">Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="Opportunity title" {...field} />
+                      <Input
+                        placeholder="Rebuild the donor dashboard"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -115,9 +119,9 @@ export function AddOpportunityModal() {
                 name="nonprofit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nonprofit</FormLabel>
+                    <FormLabel className="caps">Nonprofit</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nonprofit organization" {...field} />
+                      <Input placeholder="Food Bank Boston" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -129,10 +133,10 @@ export function AddOpportunityModal() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel className="caps">Description</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Describe the opportunity..."
+                        placeholder="What needs building, and why it matters…"
                         {...field}
                       />
                     </FormControl>
@@ -146,12 +150,9 @@ export function AddOpportunityModal() {
                 name="skills"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Skills</FormLabel>
+                    <FormLabel className="caps">Skills</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="e.g. React, Python, Design"
-                        {...field}
-                      />
+                      <Input placeholder="React, TypeScript, SQL" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -163,7 +164,7 @@ export function AddOpportunityModal() {
                 name="contact_email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nonprofit Contact Email</FormLabel>
+                    <FormLabel className="caps">Contact email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -177,21 +178,17 @@ export function AddOpportunityModal() {
               />
 
               {form.formState.errors.root && (
-                <p className="text-sm font-medium text-destructive">
+                <p className="text-sm font-medium text-danger">
                   {form.formState.errors.root.message}
                 </p>
               )}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-3 border-t border-border pt-4">
                 <Button type="button" variant="outline" onClick={handleClose}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  {isSubmitting ? "Adding..." : "Add Opportunity"}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Submitting…" : "Submit project"}
                 </Button>
               </div>
             </form>
