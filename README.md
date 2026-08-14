@@ -12,10 +12,13 @@ A web platform that connects volunteers and developers with nonprofits that have
     - [(1) Clone repository](#1-clone-repository)
     - [(2) Package installation](#2-package-installation)
     - [(3) Supabase Connection Setup](#3-supabase-connection-setup)
-    - [(4) Supabase CLI Setup](#4-supabase-cli-setup)
-    - [(5) Run the webapp](#5-run-the-webapp)
-    - [(6) (Recommended) Configure git message template](#6-recommended-configure-git-message-template)
-    - [(7) Github CI workflow (for SSWEs, do during project setup)](#7-github-ci-workflow-for-sswes-do-during-project-setup)
+    - [(4) Supabase Database Setup](#4-supabase-database-setup)
+    - [(5) Supabase + Github Authentication Setup](#5-supabase--github-authentication-setup)
+      - [User auth workflow + security explained](#user-auth-workflow--security-explained)
+    - [(6) Supabase CLI Setup](#6-supabase-cli-setup)
+    - [(7) Run the webapp](#7-run-the-webapp)
+    - [(8) (Recommended) Configure git message template](#8-recommended-configure-git-message-template)
+    - [(9) Github CI workflow (for SSWEs, do during project setup)](#9-github-ci-workflow-for-sswes-do-during-project-setup)
   - [File Walkthrough](#file-walkthrough)
     - [`app/`](#app)
     - [`components/`](#components)
@@ -82,8 +85,8 @@ npm install
 
 #### (3) Supabase Connection Setup
 
-1. Create a free account at [supabase.com](https://supabase.com) and make sure you are added to the Supabase project for Social Good Marketplace (contact your PM).
-2. In the Supabase project, go to **Project Overview** and copy the **Project URL** and **Publishable key**.
+1. Create a free account at [supabase.com](https://supabase.com) and start a new project.
+2. In your Supabase project, go to **Project Settings → API** and copy the **Project URL** and **anon public key**.
 3. Copy the `env.example` file to `.env.local`:
    ```bash
    cp env.example .env.local
@@ -94,23 +97,49 @@ npm install
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    ```
 
-#### (4) Supabase CLI Setup
+#### (4) Supabase Database Setup
+
+In the Supabase dashboard, go to the **SQL Editor** and run the contents of `setup.sql`. This will:
+
+- Create the `profiles` table linked to Supabase Auth users.
+- Enable Row Level Security (RLS) so users can only access their own profile.
+- Set up a trigger that automatically creates a profile row whenever a new user signs up.
+
+#### (5) Supabase + Github Authentication Setup
+
+1. Go to [github.com/settings/developers](https://github.com/settings/developers) and create a new OAuth App.
+   - **Homepage URL**: `http://localhost:3000` (for local dev)
+   - **Authorization callback URL**: Get this from your Supabase project under **Authentication → Providers → GitHub**
+2. Copy the **Client ID** and generate a **Client Secret** from GitHub.
+3. In Supabase, go to **Authentication → Providers → GitHub** and paste the Client ID and Secret. Save.
+
+##### User auth workflow + security explained
+
+When a user clicks "Sign in with GitHub":
+1. They are redirected to GitHub to authorize the app.
+2. GitHub sends a code back to `/auth/callback`.
+3. The callback route exchanges the code for a Supabase session and sets the session cookies.
+4. A database trigger fires and inserts a new row into `public.profiles` with the user's GitHub username and avatar URL.
+
+> **Important:** Always use `supabase.auth.getUser()` to verify a user's identity in server code. Never trust `supabase.auth.getSession()` alone on the server — it does not re-validate the token with Supabase Auth.
+
+#### (6) Supabase CLI Setup
 
 The Supabase CLI is optional but useful for managing database migrations locally.
 
-1. Install it: [Supabase CLI docs](https://supabase.com/docs/guides/cli/getting-started) or `brew install supabase/tap/supabase`
-2. Log in: `supabase login` or `npx supabase login`
-3. Link to your project: `npx supabase link --project-ref <your-project-ref>`. Your project ref is the subdomain in your Supabase project URL — `https://<project-ref>.supabase.co` — also visible in your .`env.local` (likely as `NEXT_PUBLIC_SUPABASE_URL`).
+1. Install it: [Supabase CLI docs](https://supabase.com/docs/guides/cli/getting-started)
+2. Log in: `npx supabase login`
+3. Link to your project: `npx supabase link --project-ref <your-project-ref>`
 
-#### (5) Run the webapp
+#### (7) Run the webapp
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser. (The 3000 might be a slightly different number.)
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-#### (6) (Recommended) Configure git message template
+#### (8) (Recommended) Configure git message template
 
 This repo includes a `.gitmessage` template to encourage consistent commit messages. To use it:
 
@@ -118,7 +147,7 @@ This repo includes a `.gitmessage` template to encourage consistent commit messa
 git config commit.template .gitmessage
 ```
 
-#### (7) Github CI workflow (for SSWEs, do during project setup)
+#### (9) Github CI workflow (for SSWEs, do during project setup)
 
 The repo includes a GitHub Actions workflow (`.github/`) that runs ESLint and Prettier checks on every pull request. To enable it, make sure the workflow files are present and that the repository has Actions enabled under **Settings → Actions**.
 
