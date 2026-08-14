@@ -47,7 +47,9 @@ export default function Modal({ open, onClose, children }: ModalProps) {
         >
           <X className="h-5 w-5" />
         </button>
-        {children}
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-6 pt-10">
+          {children}
+        </div>
       </div>
     </div>
   );
