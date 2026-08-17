@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Caveat, Fraunces, Inter } from "next/font/google";
 import AuthStatus from "./(components-navbar)/auth-status";
 import Navbar from "./(components-navbar)/navbar";
+import NotificationsNav from "./(components-navbar)/notifications-nav";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -68,6 +69,7 @@ export default function RootLayout({
                 <Navbar />
                 <div className="ml-auto flex items-center gap-2">
                   <ModeToggle />
+                  <NotificationsNav />
                   <AuthStatus />
                 </div>
               </div>

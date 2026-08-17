@@ -26,6 +26,8 @@ A web platform that connects volunteers and developers with nonprofits that have
     - [Components and Styling: `shadcn/ui`, Radix, and Tailwind CSS](#components-and-styling-shadcnui-radix-and-tailwind-css)
     - [Next.js](#nextjs)
     - [Supabase](#supabase)
+      - [Schema history](#schema-history)
+      - [Notifications](#notifications)
     - [Environment variables](#environment-variables)
   - [Development Tools](#development-tools)
     - [Code formatting and linting tools](#code-formatting-and-linting-tools)
@@ -47,6 +49,7 @@ This project is actively under development. The UI is minimally viable — GitHu
 - **Opportunity Cards** — The dashboard displays a grid of nonprofit project cards, each showing the project title, nonprofit name, description, and required skills.
 - **Detail Modals** — Clicking any opportunity card opens a modal overlay with the full project details and an "I'm interested" button. The modal can be closed by clicking the backdrop, clicking the X button, or pressing Escape.
 - **Navbar** — Includes links to Home and, for logged-in users, the Dashboard. Auth status is shown in the top right corner.
+- **Notifications** — A bell in the header shows in-app notifications addressed to the signed-in user, with an unread badge and mark-as-read. Rows are written by database triggers, so any state change we care about can become a notification without new application code. See [Notifications](#notifications) below.
 - **Settings Pages** — Users can navigate to `/settings` to view and edit their profile and general preferences.
 - **Auth Error Handling** — A dedicated error page is shown if the GitHub OAuth login flow fails.
 
@@ -135,6 +138,8 @@ Contains all pages and route-level components, following Next.js App Router conv
   - `login-button.tsx` — Triggers the GitHub OAuth sign-in flow.
   - `mode-toggle.tsx` — Dropdown to switch between light, dark, and system themes.
   - `navbar.tsx` — Main nav bar. Shows a "Dashboard" link only when a user is signed in. Edit this file to add new nav links.
+  - `notification-bell.tsx` — The bell dropdown. Client component; re-reads the `notifications` table every 30s (and on tab focus) and marks rows read.
+  - `notifications-nav.tsx` — Server wrapper that renders the bell only for signed-in users, seeded with a server-side read so the badge is right on first paint.
   - `user-nav.tsx` — Avatar dropdown with links to profile, settings, and sign-out.
 
 - **`auth/`** — Auth-related routes:
@@ -180,7 +185,7 @@ Utility functions and type definitions.
 
 - `.env.local` — Local environment variables (not committed to git). See `env.example` for required keys.
 - `env.mjs` — Validates environment variables at build time using Zod.
-- `setup.sql` — SQL to initialize the Supabase database (profiles table, RLS policies, trigger).
+- `notifications.sql` — SQL for the notifications table, its RLS policies, and the triggers that write to it. Run it in the Supabase SQL editor. See [Schema history](#schema-history) for why it's the only SQL file here.
 - `middleware.ts` — Runs on every request to refresh the Supabase Auth session cookie.
 - `next.config.js` — Next.js configuration.
 - `components.json` — `shadcn/ui` configuration.
@@ -224,6 +229,58 @@ Supabase provides the database (PostgreSQL), authentication, and real-time featu
 - [Supabase docs](https://supabase.com/docs)
 - [Supabase Auth + Next.js](https://supabase.com/docs/guides/auth/auth-helpers/nextjs)
 - [Row Level Security](https://supabase.com/docs/guides/auth/row-level-security)
+
+#### Schema history
+
+**This repo cannot currently recreate its own database.** Worth knowing before you point the app at a fresh Supabase project and wonder why every query fails.
+
+There used to be a `setup.sql` at the repo root, added in the initial commit, which created the `profiles` table, its RLS policies, and the `handle_new_user` trigger. **It was deleted in `e60742e` ("Add supabase support for dashboard", 2026-05-09.)** It is still in git history and can be recovered:
+
+```bash
+git show c6781a3:setup.sql > setup.sql
+```
+
+Everything added since — `opportunities`, `signups`, the `app_role` / `opportunity_status` / `signup_status` enums, the role-approval functions (`approve_role`, `is_admin`, `can_join_projects`, …) — was applied directly in the Supabase dashboard and was never committed. The only record of it is `lib/schema.ts`, which describes the shape but contains no DDL, no RLS policies, and no function bodies.
+
+`notifications.sql` is the one piece of schema that is tracked. Keep it that way: schema changes belong in a committed `.sql` file *and* run against the database, never just run. If you want this enforced rather than agreed to, baseline the live schema into `supabase/migrations/` with the Supabase CLI (`supabase db dump`) — that would recover the untracked schema into version control at the same time.
+
+#### Notifications
+
+Notifications live in a single `notifications` table (`user_id`, `message`, `link`, `read`, `created_at`). Clients never insert into it — RLS grants `select` on your own rows and `update` on the `read` column only. Rows are written by one reusable trigger function, `public.notify_user()`, which takes three arguments:
+
+| Argument | Meaning |
+|---|---|
+| `tg_argv[0]` | Column on the changed row holding the recipient's user id |
+| `tg_argv[1]` | Message to display |
+| `tg_argv[2]` | Link to open (optional) |
+
+Which field change fires it is decided by the trigger's `WHEN` clause, so **adding a notification is one `CREATE TRIGGER` statement** — no new function, no `schema.ts` edit, no UI change:
+
+```sql
+create trigger opportunity_approved_notify
+  after update of status on public.opportunities
+  for each row
+  when (old.status is distinct from new.status and new.status = 'approved')
+  execute function public.notify_user(
+    'created_by',
+    'Your project was approved and is now live in the gallery.',
+    '/dashboard'
+  );
+```
+
+Messages are fixed strings, because a generic function can't know that `signups.opportunity_id` points at `opportunities.title`. If a message needs the project name interpolated into it, give that event its own trigger function that does the lookup — both styles can write to the same table.
+
+Two guards live in `notify_user()`: it skips the notification when the recipient is the person who made the change (no "your project was closed" when you closed it yourself), and when the recipient has no `profiles` row. The second matters because `opportunities.created_by` has no foreign key — inserting against a missing profile would raise a FK violation on `notifications.user_id` and roll back the update that triggered it, so an admin's approve click would just fail.
+
+Currently wired up:
+
+| Event | Recipient | Fires when |
+|---|---|---|
+| Added to a project | Volunteer | `signups.status` → `onboarded` |
+| Interest declined | Volunteer | `signups.status` → `declined` |
+| Project approved | Organizer | `opportunities.status` → `approved` |
+| Project rejected | Organizer | `opportunities.status` → `rejected` |
+| Project closed | Organizer | `opportunities.status` → `closed` |
 
 ### Environment variables
 
@@ -270,3 +327,4 @@ For the Spring 2026 version, we made weekly progress notes are tracked in the `d
 |---|---|
 | 4/22/26 | GitHub OAuth auth working. Opportunity cards added. Minimal viable UI in place. Auth error page added. |
 | 4/30/26 | Modal components added — clicking a card now opens a detail view with an "I'm interested" button. Documentation updated. |
+| 8/16/26 | In-app notifications added: `notifications` table, a reusable `notify_user()` trigger, and a bell in the header. Signup status changes (`onboarded`, `declined`) notify the volunteer; opportunity status changes (`approved`, `rejected`, `closed`) notify the organizer. |
