@@ -8,31 +8,24 @@ import "server-only";
  */
 
 interface SendArgs {
-  to: string;
+  to: string | string[];
+  cc?: string | string[];
   subject: string;
   html: string;
   replyTo?: string;
 }
 
-export type SendResult =
-  | { ok: true; simulated: boolean }
-  | { ok: false; error: string };
+export type SendResult = { ok: true; simulated: boolean } | { ok: false; error: string };
 
-const FROM = process.env.EMAIL_FROM ?? "T4SG Marketplace <onboarding@resend.dev>";
+const FROM = process.env.EMAIL_FROM ?? "T4SG Engineering <engineering@t4sg.dev>";
 
-export async function sendEmail({
-  to,
-  subject,
-  html,
-  replyTo,
-}: SendArgs): Promise<SendResult> {
+export async function sendEmail({ to, subject, html, replyTo, cc }: SendArgs): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
+    const recipientLabel = Array.isArray(to) ? to.join(", ") : to;
     // eslint-disable-next-line no-console
-    console.info(
-      `[email:simulated] → ${to} · "${subject}" (set RESEND_API_KEY to send for real)`,
-    );
+    console.info(`[email:simulated] → ${recipientLabel} · "${subject}" (set RESEND_API_KEY to send for real)`);
     return { ok: true, simulated: true };
   }
 
@@ -43,6 +36,7 @@ export async function sendEmail({
     const { error } = await resend.emails.send({
       from: FROM,
       to,
+      ...(cc ? { cc } : {}),
       subject,
       html,
       ...(replyTo ? { replyTo } : {}),

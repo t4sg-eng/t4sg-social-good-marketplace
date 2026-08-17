@@ -31,12 +31,13 @@ A web platform that connects volunteers and developers with nonprofits that have
     - [Code formatting and linting tools](#code-formatting-and-linting-tools)
     - [VSCode Extensions](#vscode-extensions)
   - [Progress Log](#progress-log)
+  - [Interest and Decision Notifications](#interest-and-decision-notifications)
 
 ---
 
 ## Project Status
 
-This project is actively under development. The UI is minimally viable — GitHub authentication is working, opportunity cards are rendered on the dashboard, and clicking a card opens a detail modal with an "I'm interested" button. Backend support for card data and the interest notification system is the current priority.
+This project is actively under development. GitHub authentication, database-backed opportunity cards, expressions of interest, and nonprofit accept/reject decisions are implemented. Email delivery is simulated in development when a Resend API key is not configured.
 
 ---
 
@@ -46,6 +47,8 @@ This project is actively under development. The UI is minimally viable — GitHu
 - **Protected Dashboard** — The `/dashboard` route is only accessible to signed-in users. Unauthenticated visitors are redirected to the home page.
 - **Opportunity Cards** — The dashboard displays a grid of nonprofit project cards, each showing the project title, nonprofit name, description, and required skills.
 - **Detail Modals** — Clicking any opportunity card opens a modal overlay with the full project details and an "I'm interested" button. The modal can be closed by clicking the backdrop, clicking the X button, or pressing Escape.
+- **Interest Notifications** — An approved SWE can express interest once per project. The signup is recorded in Supabase, the nonprofit is notified, and the SWE receives a confirmation email.
+- **Applicant Decisions** — Project owners see interested engineers under their projects and can accept or reject each one. The decision is saved in Supabase and both parties receive an email update.
 - **Navbar** — Includes links to Home and, for logged-in users, the Dashboard. Auth status is shown in the top right corner.
 - **Settings Pages** — Users can navigate to `/settings` to view and edit their profile and general preferences.
 - **Auth Error Handling** — A dedicated error page is shown if the GitHub OAuth login flow fails.
@@ -54,9 +57,8 @@ This project is actively under development. The UI is minimally viable — GitHu
 
 ## Next Steps
 
-- **"I'm Interested" backend** — When a user clicks the button on a modal, notify the corresponding nonprofit organization (e.g. via email).
-- **Dynamic card data** — Replace the hardcoded placeholder cards with real opportunity listings pulled from the Supabase database.
-- **Opportunities table** — Design and add a database table to store nonprofit project listings (title, description, skills, org name, etc.).
+- **Email configuration** — Verify the `t4sg.dev` sending domain and configure the engineering sender in Resend.
+- **Flow testing** — Test interest, acceptance, and rejection emails with SWE and NPO accounts.
 - **Maintain documentation** — Keep the `docs/` folder and this README up to date as features are added.
 
 ---
@@ -130,7 +132,11 @@ The repo includes a GitHub Actions workflow (`.github/`) that runs ESLint and Pr
 
 Contains all pages and route-level components, following Next.js App Router conventions.
 
+- **`api/interest/route.ts`** — Authenticates an SWE, records one expression of interest, and sends the NPO and SWE emails.
+- **`api/signups/[signupId]/decision/route.ts`** — Authenticates a project owner, records an accept/reject decision, and sends the decision email.
+
 - **`(components-navbar)/`** — Components that make up the top navigation bar:
+
   - `auth-status.tsx` — Checks if the user is logged in and renders either `UserNav` or `LoginButton`.
   - `login-button.tsx` — Triggers the GitHub OAuth sign-in flow.
   - `mode-toggle.tsx` — Dropdown to switch between light, dark, and system themes.
@@ -138,12 +144,14 @@ Contains all pages and route-level components, following Next.js App Router conv
   - `user-nav.tsx` — Avatar dropdown with links to profile, settings, and sign-out.
 
 - **`auth/`** — Auth-related routes:
+
   - `auth-code-error/` — Page displayed when the GitHub OAuth login fails.
   - `callback/route.ts` — Handles the redirect from GitHub/Supabase after login. Exchanges the auth code for a session and sets cookies.
 
-- **`dashboard/page.tsx`** — Protected page (redirects unauthenticated users to `/`). Currently renders a 3-column grid of hardcoded `OpportunityCard` components. This is where dynamic database-backed cards will go.
+- **`dashboard/page.tsx`** — Protected page that renders database-backed opportunities. Project owners also see their applicants and decision controls here.
 
 - **`settings/`** — User settings pages:
+
   - `general/page.tsx` — General settings (placeholder).
   - `profile/page.tsx` and `profile/profile-form.tsx` — Profile settings with a form for updating username and avatar.
   - `layout.tsx` — Shared layout for settings pages; enforces authentication and renders the sidebar.
@@ -162,6 +170,7 @@ Shared components used across multiple pages.
 - **`global/sidebar-nav.tsx`** — Sidebar navigation used in the settings layout.
 - **`ui/`** — UI component library:
   - `opportunity-card.tsx` — The card component for a nonprofit project listing. Clicking it opens a `Modal` with full details and an "I'm interested" button.
+  - `signup-decision-actions.tsx` — Client-side Accept and Reject buttons for project owners.
   - `modal.tsx` — A reusable overlay modal. Supports closing via backdrop click, X button, or Escape key.
   - `modals/providers.tsx` — Context provider for modal state management.
   - Other components: `button`, `avatar`, `dropdown-menu`, `form`, `input`, `label`, `select`, `separator`, `textarea`, `toast`, `toaster`, `typography`.
@@ -172,6 +181,7 @@ Utility functions and type definitions.
 
 - `client-utils.ts` — Creates a Supabase client for use in browser (client) components.
 - `server-utils.ts` — Creates a Supabase client for use in server components and route handlers. Also manages auth cookies.
+- `email.ts` — Server-only Resend wrapper with simulated delivery and CC support.
 - `schema.ts` — TypeScript types that mirror the Supabase database schema. **Update this file whenever the database schema changes** to keep type safety intact.
 - `utils.ts` — General-purpose utilities: Tailwind class merging (`cn`), a sleep helper, and a profile fetcher.
 - `reset.d.ts` — Enables the `ts-reset` package for stricter TypeScript type checking.
@@ -229,10 +239,13 @@ Supabase provides the database (PostgreSQL), authentication, and real-time featu
 
 Required environment variables (defined in `.env.local`):
 
-| Variable | Description |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase project anon/public key |
+| Variable                        | Description                                                          |
+| ------------------------------- | -------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Your Supabase project URL                                            |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase project anon/public key                                |
+| `RESEND_API_KEY`                | Optional Resend API key. Without it, email is logged as simulated.   |
+| `EMAIL_FROM`                    | Verified sender, normally `T4SG Engineering <engineering@t4sg.dev>`. |
+| `EMAIL_TEAM`                    | Team mailbox used as the primary recipient for decision emails.      |
 
 These are validated at build time by `env.mjs`. If a required variable is missing, the build will fail with a descriptive error.
 
@@ -266,7 +279,28 @@ Install these for the best experience:
 
 For the Spring 2026 version, we made weekly progress notes are tracked in the `docs/` folder. For future development, we suggest adding to this progress log.
 
-| Date | Summary |
-|---|---|
-| 4/22/26 | GitHub OAuth auth working. Opportunity cards added. Minimal viable UI in place. Auth error page added. |
+| Date    | Summary                                                                                                                  |
+| ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 4/22/26 | GitHub OAuth auth working. Opportunity cards added. Minimal viable UI in place. Auth error page added.                   |
 | 4/30/26 | Modal components added — clicking a card now opens a detail view with an "I'm interested" button. Documentation updated. |
+
+## Interest and Decision Notifications
+
+The email workflow uses authenticated Next.js Route Handlers rather than calling Resend or performing trusted database updates from the browser.
+
+### SWE expresses interest
+
+1. `InterestButton` sends `POST /api/interest` with an `opportunityId`.
+2. The route gets the authenticated user from Supabase; it never accepts a volunteer ID from the browser.
+3. A `signups` row is inserted with status `interested`. The database's unique opportunity/volunteer constraint prevents duplicate signups and duplicate emails.
+4. The nonprofit receives an interest notification and the SWE receives a confirmation.
+
+### NPO accepts or rejects an SWE
+
+1. The project owner sees applicants beneath each project on the dashboard.
+2. Accept or Reject sends `PATCH /api/signups/[signupId]/decision` with a decision of `accept` or `reject`.
+3. The route authenticates the caller, derives the opportunity and volunteer from the signup, and verifies that the caller created the opportunity.
+4. The route changes `interested` to `onboarded` for acceptance or `declined` for rejection. A signup that was already decided cannot be changed again.
+5. The decision email is sent from the configured T4SG sender to the engineering mailbox with the SWE and nonprofit CC'd.
+
+The shared mail wrapper is in `lib/email.ts`. It supports CC recipients and simulates delivery when `RESEND_API_KEY` is absent. Configure `EMAIL_FROM` with a sender on a domain verified by Resend before enabling real delivery.
