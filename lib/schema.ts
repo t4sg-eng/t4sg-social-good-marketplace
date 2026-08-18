@@ -14,33 +14,52 @@ export interface Database {
           id: string;
           title: string;
           nonprofit: string;
+          nonprofit_link: string | null;
           description: string;
           skills: string;
           contact_email: string;
           t4sg_verified: boolean;
+          created_by: string | null;
+          start_date: string | null;
+          end_date: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           title: string;
           nonprofit: string;
+          nonprofit_link?: string | null;
           description: string;
           skills: string;
           contact_email: string;
           t4sg_verified?: boolean;
+          created_by?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           title?: string;
           nonprofit?: string;
+          nonprofit_link?: string | null;
           description?: string;
           skills?: string;
           contact_email?: string;
           t4sg_verified?: boolean;
+          created_by?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
           created_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_created_by_fkey";
+            columns: ["created_by"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       profiles: {
         Row: {

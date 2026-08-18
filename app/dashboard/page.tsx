@@ -58,10 +58,14 @@ export default async function Dashboard() {
               key={opportunity.id}
               title={opportunity.title}
               nonprofit={opportunity.nonprofit}
+              nonprofit_link={opportunity.nonprofit_link}
               description={opportunity.description}
               skills={opportunity.skills}
+              start_date={opportunity.start_date}
+              end_date={opportunity.end_date}
               contact_email={opportunity.contact_email}
               t4sg_verified={opportunity.t4sg_verified}
+              isOwner={opportunity.created_by === user.id}
             />
           ))}
         </div>
