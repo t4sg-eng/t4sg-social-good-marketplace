@@ -9,15 +9,53 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      notifications: {
+        Row: {
+          created_at: string;
+          id: string;
+          link: string | null;
+          message: string;
+          read: boolean;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          link?: string | null;
+          message: string;
+          read?: boolean;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          link?: string | null;
+          message?: string;
+          read?: boolean;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       opportunities: {
         Row: {
           contact_email: string;
           created_at: string;
           created_by: string;
           description: string;
+          end_date: string | null;
           id: string;
           nonprofit: string;
+          nonprofit_link: string | null;
           skills: string;
+          start_date: string | null;
           status: Database["public"]["Enums"]["opportunity_status"];
           t4sg_verified: boolean;
           title: string;
@@ -27,9 +65,12 @@ export interface Database {
           created_at?: string;
           created_by?: string;
           description: string;
+          end_date?: string | null;
           id?: string;
           nonprofit: string;
+          nonprofit_link?: string | null;
           skills: string;
+          start_date?: string | null;
           status?: Database["public"]["Enums"]["opportunity_status"];
           t4sg_verified?: boolean;
           title: string;
@@ -39,9 +80,12 @@ export interface Database {
           created_at?: string;
           created_by?: string;
           description?: string;
+          end_date?: string | null;
           id?: string;
           nonprofit?: string;
+          nonprofit_link?: string | null;
           skills?: string;
+          start_date?: string | null;
           status?: Database["public"]["Enums"]["opportunity_status"];
           t4sg_verified?: boolean;
           title?: string;
