@@ -5,6 +5,7 @@ import {
   AdminReviewActions,
   DeleteProjectButton,
 } from "@/components/ui/project-actions";
+import { SignupDecisionActions } from "@/components/ui/signup-decision-actions";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getViewer } from "@/lib/roles";
 import type { Database } from "@/lib/schema";
@@ -13,6 +14,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 type Opportunity = Database["public"]["Tables"]["opportunities"]["Row"];
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type Signup = Database["public"]["Tables"]["signups"]["Row"];
+
+const SIGNUP_STATUS_LABEL: Record<Signup["status"], string> = {
+  interested: "Awaiting decision",
+  onboarded: "Accepted",
+  declined: "Declined",
+};
 
 function SectionHeading({
   eyebrow,
@@ -71,6 +80,43 @@ export default async function Dashboard() {
   const approved = approvedRes.data ?? [];
   const mine = mineRes.data ?? [];
   const pending = pendingRes.data ?? [];
+
+  const signupRes =
+    mine.length > 0
+      ? await supabase
+          .from("signups")
+          .select("*")
+          .in(
+            "opportunity_id",
+            mine.map((opportunity) => opportunity.id),
+          )
+          .order("created_at", { ascending: false })
+          .returns<Signup[]>()
+      : { data: [] as Signup[], error: null };
+  const signups = signupRes.data ?? [];
+  const volunteerIds = [
+    ...new Set(signups.map((signup) => signup.volunteer_id)),
+  ];
+  const profileRes =
+    volunteerIds.length > 0
+      ? await supabase
+          .from("profiles")
+          .select("*")
+          .in("id", volunteerIds)
+          .returns<Profile[]>()
+      : { data: [] as Profile[], error: null };
+  const profilesById = new Map(
+    (profileRes.data ?? []).map((profile) => [profile.id, profile]),
+  );
+  const applicantError = signupRes.error ?? profileRes.error;
+  const signupsByOpportunity = new Map<string, Signup[]>();
+
+  for (const signup of signups) {
+    const projectSignups =
+      signupsByOpportunity.get(signup.opportunity_id) ?? [];
+    projectSignups.push(signup);
+    signupsByOpportunity.set(signup.opportunity_id, projectSignups);
+  }
 
   // NPOs and admins never see the CTA at all, so the only reason left to
   // explain is a viewer who may look but not yet join.
@@ -157,6 +203,46 @@ export default async function Dashboard() {
                     <StatusBadge status={p.status} />
                     <DeleteProjectButton opportunityId={p.id} title={p.title} />
                   </>
+                }
+                footer={
+                  <div className="border-t border-border pt-3">
+                    <p className="caps mb-2">Interested engineers</p>
+                    {applicantError ? (
+                      <p className="annot">
+                        Applicant details couldn&apos;t be loaded right now.
+                      </p>
+                    ) : (signupsByOpportunity.get(p.id)?.length ?? 0) > 0 ? (
+                      <ul className="flex flex-col divide-y divide-border/70">
+                        {signupsByOpportunity.get(p.id)?.map((signup) => {
+                          const volunteer = profilesById.get(
+                            signup.volunteer_id,
+                          );
+
+                          return (
+                            <li
+                              key={signup.id}
+                              className="flex flex-col gap-2 py-3 first:pt-1 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                              <div>
+                                <p className="text-sm text-foreground">
+                                  {volunteer?.email ??
+                                    "Volunteer email unavailable"}
+                                </p>
+                                <p className="annot mt-0.5">
+                                  {SIGNUP_STATUS_LABEL[signup.status]}
+                                </p>
+                              </div>
+                              {signup.status === "interested" && (
+                                <SignupDecisionActions signupId={signup.id} />
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="annot">No expressions of interest yet.</p>
+                    )}
+                  </div>
                 }
               />
             ))}
