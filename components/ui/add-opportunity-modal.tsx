@@ -67,7 +67,7 @@ const opportunitySchema = z
     start_date: z.string().min(1, "Start date is required"),
     end_date: z.string().min(1, "End date is required"),
     skills: z.string().min(1, "List at least one skill"),
-    contact_email: z.string().email("Enter a valid email address"),
+    contact_email: z.string().trim().toLowerCase().email("Enter a valid email address"),
   })
   // ISO yyyy-mm-dd sorts lexicographically, so a string compare is a date compare.
   .refine((data) => data.end_date >= data.start_date, {
