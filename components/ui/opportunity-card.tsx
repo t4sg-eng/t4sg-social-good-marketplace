@@ -12,8 +12,11 @@ export interface CardOpportunity {
   id: string;
   title: string;
   nonprofit: string;
+  nonprofit_link: string | null;
   description: string;
   skills: string;
+  start_date: string | null;
+  end_date: string | null;
   contact_email: string;
   status: Status;
 }
@@ -23,6 +26,28 @@ interface OpportunityCardProps {
   opportunity: CardOpportunity;
   canJoin: boolean;
   joinReason?: string;
+}
+
+/**
+ * Render a start/end pair as "Mar 3, 2026 – Jun 12, 2026".
+ *
+ * The columns are DATE, so the values arrive as bare yyyy-mm-dd with no zone.
+ * Parsing them as UTC and formatting in UTC keeps the displayed day identical
+ * for every viewer — parsing as local time would shift the date west of GMT.
+ */
+function formatTimeline(start: string | null, end: string | null): string | null {
+  if (!start || !end) return null;
+
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  const from = formatter.format(new Date(`${start}T00:00:00Z`));
+  const to = formatter.format(new Date(`${end}T00:00:00Z`));
+  return `${from} – ${to}`;
 }
 
 function parseSkills(skills: string): string[] {
@@ -41,6 +66,7 @@ export function OpportunityCard({
   const [open, setOpen] = useState(false);
   const skillList = parseSkills(opportunity.skills);
   const catalogue = String(index + 1).padStart(2, "0");
+  const timeline = formatTimeline(opportunity.start_date, opportunity.end_date);
 
   return (
     <>
@@ -74,6 +100,17 @@ export function OpportunityCard({
               {opportunity.title}
             </h3>
             <p className="caps mt-1">{opportunity.nonprofit}</p>
+            {opportunity.nonprofit_link && (
+              <a
+                href={opportunity.nonprofit_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 inline-block font-serif text-sm italic text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
+              >
+                Learn more →
+              </a>
+            )}
           </div>
           <span className="annot shrink-0 pt-1">({catalogue})</span>
         </div>
@@ -81,6 +118,8 @@ export function OpportunityCard({
         <p className="line-clamp-2 px-4 text-sm leading-relaxed text-muted-foreground">
           {opportunity.description}
         </p>
+
+        {timeline && <p className="annot mt-2 px-4">{timeline}</p>}
 
         <div className="flex flex-wrap gap-x-3 gap-y-1 px-4 pb-4 pt-3">
           {skillList.slice(0, 4).map((skill) => (
@@ -110,6 +149,29 @@ export function OpportunityCard({
           <p className="text-[0.95rem] leading-relaxed text-foreground/80">
             {opportunity.description}
           </p>
+
+          {timeline && (
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <p className="caps">Timeline</p>
+              <p className="font-serif text-sm italic text-foreground">
+                {timeline}
+              </p>
+            </div>
+          )}
+
+          {opportunity.nonprofit_link && (
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <p className="caps">About the nonprofit</p>
+              <a
+                href={opportunity.nonprofit_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-fit break-all font-serif text-sm italic text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
+              >
+                {opportunity.nonprofit_link}
+              </a>
+            </div>
+          )}
 
           {skillList.length > 0 && (
             <div className="flex flex-col gap-2 border-t border-border pt-4">
