@@ -12,10 +12,13 @@ A web platform that connects volunteers and developers with nonprofits that have
     - [(1) Clone repository](#1-clone-repository)
     - [(2) Package installation](#2-package-installation)
     - [(3) Supabase Connection Setup](#3-supabase-connection-setup)
-    - [(4) Supabase CLI Setup](#4-supabase-cli-setup)
-    - [(5) Run the webapp](#5-run-the-webapp)
-    - [(6) (Recommended) Configure git message template](#6-recommended-configure-git-message-template)
-    - [(7) Github CI workflow (for SSWEs, do during project setup)](#7-github-ci-workflow-for-sswes-do-during-project-setup)
+    - [(4) Resend Email Setup](#4-resend-email-setup)
+      - [(4a) Verify `t4sg.dev` as a sending domain](#4a-verify-t4sgdev-as-a-sending-domain)
+      - [(4b) Create an API key scoped to sending only](#4b-create-an-api-key-scoped-to-sending-only)
+    - [(5) Supabase CLI Setup](#5-supabase-cli-setup)
+    - [(6) Run the webapp](#6-run-the-webapp)
+    - [(7) (Recommended) Configure git message template](#7-recommended-configure-git-message-template)
+    - [(8) Github CI workflow (for SSWEs, do during project setup)](#8-github-ci-workflow-for-sswes-do-during-project-setup)
   - [File Walkthrough](#file-walkthrough)
     - [`app/`](#app)
     - [`components/`](#components)
@@ -35,6 +38,7 @@ A web platform that connects volunteers and developers with nonprofits that have
     - [Code formatting and linting tools](#code-formatting-and-linting-tools)
     - [VSCode Extensions](#vscode-extensions)
   - [Progress Log](#progress-log)
+  - [Feature Changes Since June 2026](#feature-changes-since-june-2026)
   - [Interest and Decision Notifications](#interest-and-decision-notifications)
 
 ---
@@ -74,7 +78,7 @@ Email delivery is simulated in development when a Resend API key is not configur
 
 ## Next Steps
 
-- **Email configuration** — Verify the `t4sg.dev` sending domain and configure the engineering sender in Resend.
+- **Email configuration** — Verify the `t4sg.dev` sending domain in Resend and issue a sending-access key restricted to it. Steps in [(4) Resend Email Setup](#4-resend-email-setup).
 - **Flow testing** — Test interest, acceptance, and rejection emails with SWE and NPO accounts.
 - **Commit the schema** — Baseline the live database (roles, opportunities, signups, policies, functions) into `supabase/migrations/`. See [Schema history](#schema-history); right now the app cannot recreate its own database.
 - **Admin role management UI** — Role requests are written from the profile page, but approving them still means editing `profiles` by hand in Supabase.
@@ -110,13 +114,54 @@ npm install
    ```bash
    cp env.example .env.local
    ```
-4. Fill in the values in `.env.local`:
+4. Fill in all five values in `.env.local`:
+
    ```
-   NEXT_PUBLIC_SUPABASE_URL=your-project-url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable key>
+   RESEND_API_KEY=<your Resend API key>
+   EMAIL_FROM="T4SG Engineering <engineering@t4sg.dev>"
+   EMAIL_TEAM="engineering@t4sg.dev"
    ```
 
-#### (4) Supabase CLI Setup
+   Notes on each:
+
+   - **`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`** — the two values you copied in step 2. The variable is named `..._ANON_KEY` for historical reasons; Supabase now labels that same value the **Publishable key** in the dashboard. It is safe to expose to the browser — RLS is what protects the data. Never put the **service role** / secret key in this file.
+   - **`RESEND_API_KEY`** — get one at [resend.com](https://resend.com). **If you don't have a key yet, that's fine — leave it blank and keep going.** `lib/email.ts` detects the missing key and simulates delivery by logging each message to the server console, so the interest and decision flows still work end to end. Only set a real key once the domain in `EMAIL_FROM` is verified in Resend; Resend rejects sends from an unverified domain, so a real key with an unverified sender is worse than no key at all. See [(4) Resend Email Setup](#4-resend-email-setup) for verifying the domain and creating a properly scoped key.
+   - **`EMAIL_FROM`** — the sender address. The domain must be verified in Resend; the prefix (`engineering@`, `support@`, …) is yours to choose.
+   - **`EMAIL_TEAM`** — the team mailbox that receives decision emails, with the SWE and nonprofit CC'd.
+
+   The two Supabase variables are declared in `env.mjs` and validated at build time, so a missing one fails the build. The three email variables are read straight from `process.env` and each has a hardcoded fallback — so fill them in deliberately, because a typo in the name silently uses the default instead of raising an error.
+
+5. If you are pointing at a **fresh** Supabase project rather than the shared one, the database will be empty and every query will fail. `notifications.sql` is the only schema this repo can replay — the rest (`profiles` roles, `opportunities`, `signups`, their policies and functions) exists only in the shared project's dashboard. Read [Schema history](#schema-history) before going down this path.
+
+#### (4) Resend Email Setup
+
+Skip this if you left `RESEND_API_KEY` blank — the app simulates delivery and everything else works. Do it when you want real emails to go out. There are two parts, and **both are required**: Resend will not send from `engineering@t4sg.dev` until the domain is verified, and the key you use to send should never be a full-access one.
+
+##### (4a) Verify `t4sg.dev` as a sending domain
+
+A new Resend account can only send from `onboarding@resend.dev`. Sending from `engineering@t4sg.dev` — the address this project uses in `EMAIL_FROM` — means proving you own `t4sg.dev` first:
+
+1. Open the [Resend Domains dashboard](https://resend.com/domains) and click **Add Domain**.
+2. Enter `t4sg.dev`. A subdomain such as `mail.t4sg.dev` also works and keeps this app's sending reputation separate from any other mail on the root domain — but it changes the sender to `engineering@mail.t4sg.dev`, so pick one and set `EMAIL_FROM` to match.
+3. Resend generates the **DNS records** for it: a DKIM `TXT` record for the signing key, an SPF `TXT` record authorizing Resend's servers, and an `MX` record for bounce handling.
+4. Log in to whoever hosts DNS for `t4sg.dev` — Vercel, Cloudflare, Namecheap — and add those records exactly as Resend shows them, including the record names. Ask your PM if you don't have registrar access; this is the step that usually needs someone else.
+5. Wait for the domain to flip to **Verified** in Resend. Propagation is usually minutes, occasionally up to an hour.
+6. Once verified, **any** prefix on that domain is a valid sender — `engineering@t4sg.dev`, `no-reply@t4sg.dev`, `support@t4sg.dev` — with no further setup per address. `EMAIL_FROM` is already set to `T4SG Engineering <engineering@t4sg.dev>`, so nothing to change unless you want a different prefix.
+
+##### (4b) Create an API key scoped to sending only
+
+**Make sure the key is scoped to Sending Access, not Full Access.** A full-access key can read your account, create and revoke other keys, and send as any domain you own; this app only ever needs to send.
+
+1. Go to **API Keys** in Resend and click **Create API Key**.
+2. Change **Permission** from `Full Access` to **`Sending Access`**.
+3. Select `t4sg.dev` from the **Restricted Domain** dropdown, so the key cannot send as any other domain on the account.
+4. Copy the key into `RESEND_API_KEY` in `.env.local`. Resend shows it once — if you lose it, revoke it and make a new one rather than reusing anything.
+
+That combination caps the blast radius: a leaked key can send mail as `t4sg.dev` and nothing else. `.env.local` is gitignored, but scope the key anyway — how bad a leak gets shouldn't depend on that file staying secret.
+
+#### (5) Supabase CLI Setup
 
 The Supabase CLI is optional but useful for managing database migrations locally.
 
@@ -124,7 +169,7 @@ The Supabase CLI is optional but useful for managing database migrations locally
 2. Log in: `supabase login` or `npx supabase login`
 3. Link to your project: `npx supabase link --project-ref <your-project-ref>`. Your project ref is the subdomain in your Supabase project URL — `https://<project-ref>.supabase.co` — also visible in your .`env.local` (likely as `NEXT_PUBLIC_SUPABASE_URL`).
 
-#### (5) Run the webapp
+#### (6) Run the webapp
 
 ```bash
 npm run dev
@@ -132,7 +177,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser. (The 3000 might be a slightly different number.)
 
-#### (6) (Recommended) Configure git message template
+#### (7) (Recommended) Configure git message template
 
 This repo includes a `.gitmessage` template to encourage consistent commit messages. To use it:
 
@@ -140,7 +185,7 @@ This repo includes a `.gitmessage` template to encourage consistent commit messa
 git config commit.template .gitmessage
 ```
 
-#### (7) Github CI workflow (for SSWEs, do during project setup)
+#### (8) Github CI workflow (for SSWEs, do during project setup)
 
 The repo includes a GitHub Actions workflow (`.github/`) that runs ESLint and Prettier checks on every pull request. To enable it, make sure the workflow files are present and that the repository has Actions enabled under **Settings → Actions**.
 
@@ -223,7 +268,7 @@ Utility functions and type definitions.
 - `env.mjs` — Validates environment variables at build time using Zod.
 - `notifications.sql` — SQL for the notifications table, its RLS policies, and the triggers that write to it. Run it in the Supabase SQL editor. See [Schema history](#schema-history) for why it's the only SQL file here.
 - `middleware.ts` — Runs on every request to refresh the Supabase Auth session cookie.
-- `next.config.local.js` — A local-only Next.js override that switches dev file watching to polling, working around macOS `EMFILE` ("too many open files") errors that break hot reload. Its header comment says it is untracked and copied from `next.config.local.example.js`, but neither is true today: the file is committed and no example file exists. It is also not referenced by `next.config.js`, so nothing loads it — treat it as a snippet to merge into `next.config.js` if you hit the watcher bug, or clean it up.
+- `next.config.local.js` — Gitignored, and no longer tracked. It held a local-only override that switched dev file watching to polling, to work around macOS `EMFILE` ("too many open files") errors that break hot reload. Nothing in `next.config.js` ever loaded it. If you hit that watcher bug on macOS, add `watchOptions: { poll: 1000, aggregateTimeout: 300, ignored: /node_modules/ }` to the dev branch of a `webpack()` override in `next.config.js` locally.
 - `next.config.js` — Next.js configuration.
 - `components.json` — `shadcn/ui` configuration.
 - `tailwind.config.ts` — Tailwind CSS configuration.
@@ -365,17 +410,19 @@ Currently wired up:
 
 ### Environment variables
 
-Required environment variables (defined in `.env.local`):
+Environment variables live in `.env.local` (gitignored). `env.example` is the template — keep it in sync when you add a variable.
 
-| Variable                        | Description                                                          |
-| ------------------------------- | -------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Your Supabase project URL                                            |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase project anon/public key                                |
-| `RESEND_API_KEY`                | Optional Resend API key. Without it, email is logged as simulated.   |
-| `EMAIL_FROM`                    | Verified sender, normally `T4SG Engineering <engineering@t4sg.dev>`. |
-| `EMAIL_TEAM`                    | Team mailbox used as the primary recipient for decision emails.      |
+| Variable                        | Required | If unset                                  | Read by                                        |
+| ------------------------------- | -------- | ----------------------------------------- | ---------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Yes      | Build fails                               | `client-utils.ts`, `server-utils.ts`           |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes      | Build fails                               | `client-utils.ts`, `server-utils.ts`           |
+| `RESEND_API_KEY`                | No       | Email is simulated to the server console  | `lib/email.ts`                                 |
+| `EMAIL_FROM`                    | No       | `T4SG Engineering <engineering@t4sg.dev>` | `lib/email.ts`                                 |
+| `EMAIL_TEAM`                    | No       | `engineering@t4sg.dev`                    | `app/api/signups/[signupId]/decision/route.ts` |
 
-These are validated at build time by `env.mjs`. If a required variable is missing, the build will fail with a descriptive error.
+Only the two `NEXT_PUBLIC_SUPABASE_*` variables are declared in `env.mjs`, so only those are validated at build time — a missing or malformed one fails the build with a descriptive error. The three email variables are read directly from `process.env` with the fallbacks above, which means a misspelled name silently produces the default instead of an error. `NODE_ENV` is validated too, but Next.js sets it, not you.
+
+To skip validation entirely (e.g. in a Docker build), set `SKIP_ENV_VALIDATION=1`.
 
 ---
 
@@ -407,16 +454,155 @@ Install these for the best experience:
 
 For the Spring 2026 version, we made weekly progress notes are tracked in the `docs/` folder. For future development, we suggest adding to this progress log.
 
-| Date    | Summary                                                                                                                                                                                                                                                                                  |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 4/22/26 | GitHub OAuth auth working. Opportunity cards added. Minimal viable UI in place. Auth error page added.                                                                                                                                                                                   |
-| 4/30/26 | Modal components added — clicking a card now opens a detail view with an "I'm interested" button. Documentation updated.                                                                                                                                                                 |
-| 5/9/26  | Supabase-backed dashboard. `setup.sql` deleted here — see [Schema history](#schema-history).                                                                                                                                                                                             |
-| 7/19/26 | (`020c4c0`) README updated for the Supabase connection and CLI setup steps; `supabase/` working directories added to `.gitignore`.                                                                                                                                                       |
-| 8/13/26 | (`7716ac3`, ui-experiments) "The Open Queue" editorial redesign: Fraunces/Inter/Caveat type system, `.caps` / `.annot` / `.dot-field` utilities, semantic status colors, and the `/lab` color tool. Studio identity landed alongside the role/approval model and the first email wiring. |
-| 8/16/26 | In-app notifications added: `notifications` table, a reusable `notify_user()` trigger, and a bell in the header. Signup status changes (`onboarded`, `declined`) notify the volunteer; opportunity status changes (`approved`, `rejected`, `closed`) notify the organizer.               |
-| 8/17/26 | Email routing finished: `/api/interest` and `/api/signups/[signupId]/decision` handle auth, writes, and Resend delivery server-side.                                                                                                                                                     |
-| 8/18/26 | Role-aware dashboard merged to main: admin review queue, owner delete, clickable project rows opening the shared detail modal, status badges, and the expanded submission form (nonprofit link, start/end dates, searchable skills multi-select).                                        |
+| Date    | Summary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4/22/26 | GitHub OAuth auth working. Opportunity cards added. Minimal viable UI in place. Auth error page added.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 4/30/26 | Modal components added — clicking a card now opens a detail view with an "I'm interested" button. Documentation updated.                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 5/9/26  | Supabase-backed dashboard. (`setup.sql` deleted here — see [Schema history](#schema-history)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 7/19/26 | (`020c4c0`) README updated for the Supabase connection and CLI setup steps; `supabase/` working directories added to `.gitignore`.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 8/7/26  | Capped a two-week effort on the Supabase security model: rewrote and tightened the RLS policies across `profiles`, `opportunities`, and `signups` so role permissions are enforced by the database rather than the UI. This is what makes `member` / `swe` / `npo` / `admin` mean anything — e.g. only an approved `swe` can insert a `signup`, and only an admin can move an opportunity out of `pending`. Applied in the Supabase dashboard, so none of it is in this repo — see [Schema history](#schema-history) and [Roles and approval](#roles-and-approval). |
+| 8/13/26 | (`7716ac3`, ui-experiments) "The Open Queue" editorial redesign: Fraunces/Inter/Caveat type system, `.caps` / `.annot` / `.dot-field` utilities, semantic status colors, and the `/lab` color tool. Studio identity landed alongside the role/approval model and the first email wiring.                                                                                                                                                                                                                                                                            |
+| 8/16/26 | In-app notifications added: `notifications` table, a reusable `notify_user()` trigger, and a bell in the header. Signup status changes (`onboarded`, `declined`) notify the volunteer; opportunity status changes (`approved`, `rejected`, `closed`) notify the organizer.                                                                                                                                                                                                                                                                                          |
+| 8/17/26 | Email routing finished: `/api/interest` and `/api/signups/[signupId]/decision` handle auth, writes, and Resend delivery server-side.                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 8/18/26 | Role-aware dashboard merged to main: admin review queue, owner delete, clickable project rows opening the shared detail modal, status badges, and the expanded submission form (nonprofit link, start/end dates, searchable skills multi-select).                                                                                                                                                                                                                                                                                                                   |
+
+## Feature Changes Since June 2026
+
+Everything below is in the current version of `main`. Each entry lists what changed and the files that changed.
+
+### Roles and permissions
+
+**Summary**
+
+- Every profile has a role: `member`, `swe`, `npo`, or `admin`. New users start as `member`.
+- Users request Contributor (SWE) or Organizer (NPO) access from their profile page. An admin approves it.
+- The role decides what the dashboard shows. NPOs and admins get a post button. Admins get a review queue. Approved SWEs get "I'm interested".
+- RLS policies in Supabase enforce the same rules, so the UI only hides actions the database would reject anyway.
+
+**Files**
+
+- `lib/roles.ts` — `getViewer()`, which returns the user, role, and the `isAdmin` / `canPost` / `canJoin` / `showJoinCta` flags
+- `lib/schema.ts` — `app_role` enum, `role`, `role_approved`, `requested_role`, `approved_by`, `approved_at`
+- `app/settings/profile/profile-form.tsx` — role request form
+- `app/dashboard/page.tsx` — branches on the viewer's flags
+
+### Posting and reviewing projects
+
+**Summary**
+
+- NPOs and admins post projects through the Add Opportunity modal.
+- New projects start as `pending` and do not appear in the public gallery.
+- Admins see a review queue and approve or reject each project.
+- Project owners (NPO, Admin) can delete their own projects.
+- Every project shows a status badge: Approved, Under review, Rejected, or Closed.
+
+**Files**
+
+- `components/ui/add-opportunity-modal.tsx` — the post form
+- `components/ui/project-actions.tsx` — `AdminReviewActions` and `DeleteProjectButton`
+- `components/ui/status-badge.tsx` — the status pill
+- `components/ui/project-list-row.tsx` — compact row used by the queue and the owner's list
+- `lib/schema.ts` — `opportunity_status` enum
+
+### Opportunity details
+
+**Summary**
+
+- NPOs and admins can add a nonprofit website link when posting. It shows as "Learn more" on the card and "About the nonprofit" in the detail modal.
+- Add Opportunity includes required start and end dates. The end date must be on or after the start date. The timeline shows on the card and in the detail modal.
+- Skills is a multi-select dropdown with search, chips, and an Other field for custom skills. Values still save as a comma-separated string.
+- Each project has a contact email, shown as a `mailto:` link in the modal.
+
+**Files**
+
+- `lib/schema.ts` — `nonprofit_link`, `start_date`, `end_date`, `contact_email`, `created_by`
+- `components/ui/add-opportunity-modal.tsx` — form fields, skills picker, `created_by` on insert
+- `components/ui/opportunity-detail-modal.tsx` — timeline, skill chips, link, contact
+- `components/ui/opportunity-card.tsx` — link, timeline, owner CTA
+- `app/dashboard/page.tsx` — passes the new fields; still sorts by `created_at` newest first
+
+### Shared detail modal
+
+**Summary**
+
+- Clicking an opportunity opens the same read-only detail modal for NPOs as for SWEs.
+- Project rows in the admin queue and the owner's list open that same modal.
+- "I'm interested" is hidden when the viewer owns the listing (`created_by === current user`).
+- The button is disabled with a reason for anyone who is not an approved SWE.
+
+**Files**
+
+- `components/ui/opportunity-detail-modal.tsx` — the shared modal
+- `components/ui/opportunity-card.tsx` — takes `showJoin`, `canJoin`, `joinReason`
+- `components/ui/project-list-row.tsx` — clickable rows
+- `components/ui/interest-button.tsx` — the CTA and its disabled state
+
+### Email notifications
+
+**Summary**
+
+- An approved SWE can express interest once per project. The NPO gets an email and the SWE gets a confirmation.
+- The project owner accepts or rejects each applicant. Both parties get an email.
+- Emails send from authenticated route handlers, never from the browser.
+- Without a Resend API key, emails are logged to the server console instead of sent.
+
+**Files**
+
+- `app/api/interest/route.ts` — records interest and sends both emails
+- `app/api/signups/[signupId]/decision/route.ts` — records the decision and sends the email
+- `lib/email.ts` — Resend wrapper with CC support and simulated delivery
+- `components/ui/signup-decision-actions.tsx` — Accept and Reject buttons
+- `lib/schema.ts` — `signups` table and `signup_status` enum
+
+### In-app notifications
+
+**Summary**
+
+- A bell in the header shows notifications for the signed-in user, with an unread badge and mark-as-read.
+- Rows are written by database triggers, not by the app.
+- Volunteers are notified when they are added to a project or declined.
+- Organizers are notified when their project is approved, rejected, or closed.
+- Adding a new notification takes one `CREATE TRIGGER` statement and no app code.
+
+**Files**
+
+- `notifications.sql` — table, RLS policies, and the reusable `notify_user()` trigger function
+- `app/(components-navbar)/notification-bell.tsx` — the dropdown
+- `app/(components-navbar)/notifications-nav.tsx` — server wrapper that seeds the badge
+
+### UI redesign
+
+**Summary**
+
+- The site was redesigned around an editorial identity, "The Open Queue".
+- Three fonts: Fraunces for headings, Inter for body, Caveat for accents.
+- Reusable classes replace one-off styling: `.caps`, `.annot`, `.dot-field`.
+- Semantic color tokens for `success`, `warning`, and `danger`, each with a soft variant, defined once and overridden for dark mode.
+- `/lab` is an internal tool for editing the palette live and copying the CSS back out.
+
+**Files**
+
+- `app/layout.tsx` — font loading
+- `app/globals.css` — color variables and utility classes
+- `tailwind.config.ts` — font families and semantic colors
+- `app/(home)/page.tsx` — redesigned landing page
+- `app/lab/page.tsx` — the color lab
+- `components/ui/typography.tsx` — updated type scale
+
+### Earlier UI fixes
+
+**Summary**
+
+- The dashboard grid is responsive: one column on mobile, two on tablet, three on desktop.
+- Modals cap at 90% of the viewport height and scroll long content instead of overflowing.
+- Long titles clamp to two lines; long descriptions wrap.
+- Hardcoded light-mode colors were replaced with theme-aware Tailwind values.
+
+**Files**
+
+- `components/ui/modal.tsx` — height cap and scrolling
+- `components/ui/opportunity-card.tsx` — clamping and theme colors
+- `app/dashboard/page.tsx` — responsive grid
 
 ## Interest and Decision Notifications
 
