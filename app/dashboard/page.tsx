@@ -1,5 +1,6 @@
 import { AddOpportunityModal } from "@/components/ui/add-opportunity-modal";
 import { OpportunityCard } from "@/components/ui/opportunity-card";
+import { ProjectListRow } from "@/components/ui/project-list-row";
 import {
   AdminReviewActions,
   DeleteProjectButton,
@@ -71,11 +72,11 @@ export default async function Dashboard() {
   const mine = mineRes.data ?? [];
   const pending = pendingRes.data ?? [];
 
-  const joinReason = !viewer.canJoin
-    ? viewer.role === "npo"
-      ? "Organizer accounts post projects rather than sign up."
-      : "Request contributor access in your profile to sign up."
-    : undefined;
+  // NPOs and admins never see the CTA at all, so the only reason left to
+  // explain is a viewer who may look but not yet join.
+  const joinReason = viewer.canJoin
+    ? undefined
+    : "Request contributor access in your profile to sign up.";
 
   return (
     <div className="flex flex-col gap-16">
@@ -118,21 +119,17 @@ export default async function Dashboard() {
           />
           {pending.length > 0 ? (
             <ul className="flex flex-col divide-y divide-border border border-border bg-card">
-              {pending.map((p) => (
-                <li
+              {pending.map((p, i) => (
+                <ProjectListRow
                   key={p.id}
-                  className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="font-serif text-base font-medium text-foreground">
-                      {p.title}
-                    </p>
-                    <p className="caps mt-0.5">
-                      {p.nonprofit} · {p.skills}
-                    </p>
-                  </div>
-                  <AdminReviewActions opportunityId={p.id} title={p.title} />
-                </li>
+                  index={i}
+                  opportunity={p}
+                  subtitle={`${p.nonprofit} · ${p.skills}`}
+                  className="gap-3"
+                  actions={
+                    <AdminReviewActions opportunityId={p.id} title={p.title} />
+                  }
+                />
               ))}
             </ul>
           ) : (
@@ -150,22 +147,18 @@ export default async function Dashboard() {
             annotation={`(${mine.length})`}
           />
           <ul className="flex flex-col divide-y divide-border border border-border bg-card">
-            {mine.map((p) => (
-              <li
+            {mine.map((p, i) => (
+              <ProjectListRow
                 key={p.id}
-                className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="font-serif text-base font-medium text-foreground">
-                    {p.title}
-                  </p>
-                  <p className="caps mt-0.5">{p.nonprofit}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <StatusBadge status={p.status} />
-                  <DeleteProjectButton opportunityId={p.id} title={p.title} />
-                </div>
-              </li>
+                index={i}
+                opportunity={p}
+                actions={
+                  <>
+                    <StatusBadge status={p.status} />
+                    <DeleteProjectButton opportunityId={p.id} title={p.title} />
+                  </>
+                }
+              />
             ))}
           </ul>
         </section>
@@ -190,6 +183,13 @@ export default async function Dashboard() {
                 key={opportunity.id}
                 index={i}
                 opportunity={opportunity}
+                // Nobody is invited to sign up for their own posting. The
+                // roles that can post are already excluded above, so this only
+                // catches a viewer whose role changed after they posted.
+                showJoin={
+                  viewer.showJoinCta &&
+                  opportunity.created_by !== viewer.user.id
+                }
                 canJoin={viewer.canJoin}
                 joinReason={joinReason}
               />
