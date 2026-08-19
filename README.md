@@ -24,8 +24,10 @@ A web platform that connects volunteers and developers with nonprofits that have
   - [Stack References](#stack-references)
     - [Typescript](#typescript)
     - [Components and Styling: `shadcn/ui`, Radix, and Tailwind CSS](#components-and-styling-shadcnui-radix-and-tailwind-css)
+    - [Design system: "The Open Queue"](#design-system-the-open-queue)
     - [Next.js](#nextjs)
     - [Supabase](#supabase)
+      - [Roles and approval](#roles-and-approval)
       - [Schema history](#schema-history)
       - [Notifications](#notifications)
     - [Environment variables](#environment-variables)
@@ -39,7 +41,15 @@ A web platform that connects volunteers and developers with nonprofits that have
 
 ## Project Status
 
-This project is actively under development. GitHub authentication, database-backed opportunity cards, expressions of interest, and nonprofit accept/reject decisions are implemented. Email delivery is simulated in development when a Resend API key is not configured.
+This project is actively under development. GitHub authentication, database-backed opportunity cards, expressions of interest, and nonprofit accept/reject decisions are implemented.
+
+Since the UI experiments merge (`7716ac3`) the app has grown three layers on top of that base:
+
+1. **A role system.** Every profile carries an `app_role` (`member`, `swe`, `npo`, `admin`) plus an approval flag. Roles decide who can post projects, who can express interest, and who reviews the queue. Users request a role from their profile page; an admin approves it.
+2. **Notification delivery, in two channels.** Transactional email through Resend (`/api/interest`, `/api/signups/[signupId]/decision`) and in-app notifications written by database triggers and surfaced in a header bell.
+3. **A distinct visual identity.** An editorial "Open Queue" redesign — serif/script/sans type system, semantic status colors, and a color lab at `/lab` for tuning the palette.
+
+Email delivery is simulated in development when a Resend API key is not configured.
 
 ---
 
@@ -47,8 +57,12 @@ This project is actively under development. GitHub authentication, database-back
 
 - **GitHub OAuth Authentication** — Users sign in with their GitHub account via Supabase Auth. On first login, a profile row is automatically created in the database with their username and avatar URL.
 - **Protected Dashboard** — The `/dashboard` route is only accessible to signed-in users. Unauthenticated visitors are redirected to the home page.
+- **Roles and Approval** — Profiles carry a role (`member`, `swe`, `npo`, `admin`) and an approval flag. Users request contributor (SWE) or organizer (NPO) access from `/settings/profile`; an admin approves it. The UI reads the role through `getViewer()` and shows a different dashboard to each: organizers get a post button and applicant controls, admins get a review queue, approved SWEs get the "I'm interested" CTA, and unapproved members see it disabled with a prompt to request access. RLS on the database is the real gate — the UI only avoids offering actions that would 403.
+- **Project Submission** — Organizers post projects through a modal form validated with Zod: title, nonprofit, optional nonprofit website, description, start and end dates (end must be on or after start), contact email, and skills. Skills use a searchable multi-select of nine presets (React, Next.js, TypeScript, Python, Java, Design, Data Analysis, Mobile, DevOps) with an "Other" field for free-text entries; selections render as removable chips and persist as a comma-separated string.
+- **Admin Review Queue** — New projects land as `pending`. Admins see them in a dedicated queue on the dashboard and approve or reject each one; only `approved` projects appear in the public gallery. Owners can also delete their own projects.
 - **Opportunity Cards** — The dashboard displays a grid of nonprofit project cards, each showing the project title, nonprofit name, description, and required skills.
-- **Detail Modals** — Clicking any opportunity card opens a modal overlay with the full project details and an "I'm interested" button. The modal can be closed by clicking the backdrop, clicking the X button, or pressing Escape.
+- **Detail Modals** — Clicking any opportunity card or project row opens a modal overlay with the full project details — timeline, skill chips, a link to the nonprofit's site, a `mailto:` contact link, and the "I'm interested" button. The modal can be closed by clicking the backdrop, clicking the X button, or pressing Escape.
+- **Status Badges** — Projects show their state (Approved / Under review / Rejected / Closed) as a semantic color-coded badge, so an organizer can tell at a glance where each of their postings stands.
 - **Interest Notifications** — An approved SWE can express interest once per project. The signup is recorded in Supabase, the nonprofit is notified, and the SWE receives a confirmation email.
 - **Applicant Decisions** — Project owners see interested engineers under their projects and can accept or reject each one. The decision is saved in Supabase and both parties receive an email update.
 - **Navbar** — Includes links to Home and, for logged-in users, the Dashboard. Auth status is shown in the top right corner.
@@ -62,6 +76,9 @@ This project is actively under development. GitHub authentication, database-back
 
 - **Email configuration** — Verify the `t4sg.dev` sending domain and configure the engineering sender in Resend.
 - **Flow testing** — Test interest, acceptance, and rejection emails with SWE and NPO accounts.
+- **Commit the schema** — Baseline the live database (roles, opportunities, signups, policies, functions) into `supabase/migrations/`. See [Schema history](#schema-history); right now the app cannot recreate its own database.
+- **Admin role management UI** — Role requests are written from the profile page, but approving them still means editing `profiles` by hand in Supabase.
+- **Close the loop on the two notification channels** — Interest and decision events send email from route handlers; status changes write in-app rows from triggers. Decide which events should do both.
 - **Maintain documentation** — Keep the `docs/` folder and this README up to date as features are added.
 
 ---
@@ -153,12 +170,14 @@ Contains all pages and route-level components, following Next.js App Router conv
   - `auth-code-error/` — Page displayed when the GitHub OAuth login fails.
   - `callback/route.ts` — Handles the redirect from GitHub/Supabase after login. Exchanges the auth code for a session and sets cookies.
 
-- **`dashboard/page.tsx`** — Protected page that renders database-backed opportunities. Project owners also see their applicants and decision controls here.
+- **`dashboard/page.tsx`** — Protected page, and the one screen that changes most by role. It resolves the viewer with `getViewer()`, then loads approved projects, the viewer's own projects, and (for admins) the pending queue in parallel. Organizers see their applicants and accept/reject controls beneath each posting; admins see the review queue; approved SWEs see the interest CTA on cards they didn't post.
+
+- **`lab/page.tsx`** — `/lab`, an internal color lab. Lets you edit the palette live in the browser, preview it against real components (cards, badges, toasts) in light and dark mode, and copy the resulting CSS variables to paste into `app/globals.css`. Development tooling, not a user-facing route.
 
 - **`settings/`** — User settings pages:
 
   - `general/page.tsx` — General settings (placeholder).
-  - `profile/page.tsx` and `profile/profile-form.tsx` — Profile settings with a form for updating username and avatar.
+  - `profile/page.tsx` and `profile/profile-form.tsx` — Shows the viewer's current role and hosts the role request form. A user picks Contributor (SWE) or Organizer (Nonprofit), which writes `requested_role` on their profile and shows a pending state until an admin approves it.
   - `layout.tsx` — Shared layout for settings pages; enforces authentication and renders the sidebar.
   - `page.tsx` — Redirects `/settings` to `/settings/general`.
 
@@ -174,8 +193,14 @@ Shared components used across multiple pages.
 
 - **`global/sidebar-nav.tsx`** — Sidebar navigation used in the settings layout.
 - **`ui/`** — UI component library:
-  - `opportunity-card.tsx` — The card component for a nonprofit project listing. Clicking it opens a `Modal` with full details and an "I'm interested" button.
+  - `opportunity-card.tsx` — The card component for a nonprofit project listing. Clicking it opens the detail modal. Takes `showJoin` / `canJoin` / `joinReason` so the dashboard, not the card, decides whether the CTA appears, is live, or is disabled with an explanation.
+  - `opportunity-detail-modal.tsx` — Full project view: formatted timeline (`formatTimeline`), parsed skill chips (`parseSkills`), nonprofit website link, and `mailto:` contact link.
+  - `project-list-row.tsx` — A compact numbered row used by the admin queue and the "projects you posted" list. The row body is clickable and opens the same detail modal; `actions` and `footer` slots carry the per-role controls.
+  - `add-opportunity-modal.tsx` — The organizer's project submission form: Zod-validated fields, date range check, and the searchable skills multi-select with preset chips plus custom entries.
+  - `project-actions.tsx` — `AdminReviewActions` (approve/reject a pending project) and `DeleteProjectButton` (owner deletes their own posting). Both write to Supabase directly and `router.refresh()`.
+  - `interest-button.tsx` — Posts to `/api/interest`. Renders disabled with a reason when the viewer isn't an approved SWE.
   - `signup-decision-actions.tsx` — Client-side Accept and Reject buttons for project owners.
+  - `status-badge.tsx` — Color-coded opportunity status pill (Approved / Under review / Rejected / Closed).
   - `modal.tsx` — A reusable overlay modal. Supports closing via backdrop click, X button, or Escape key.
   - `modals/providers.tsx` — Context provider for modal state management.
   - Other components: `button`, `avatar`, `dropdown-menu`, `form`, `input`, `label`, `select`, `separator`, `textarea`, `toast`, `toaster`, `typography`.
@@ -187,6 +212,7 @@ Utility functions and type definitions.
 - `client-utils.ts` — Creates a Supabase client for use in browser (client) components.
 - `server-utils.ts` — Creates a Supabase client for use in server components and route handlers. Also manages auth cookies.
 - `email.ts` — Server-only Resend wrapper with simulated delivery and CC support.
+- `roles.ts` — Server-only `getViewer()`. Returns the signed-in user, their profile, and the derived permission flags (`isAdmin`, `canPost`, `canJoin`, `showJoinCta`) that the dashboard and cards branch on. Falls back to `member` if the profile can't be read rather than locking the dashboard — RLS is still the real gate on every write.
 - `schema.ts` — TypeScript types that mirror the Supabase database schema. **Update this file whenever the database schema changes** to keep type safety intact.
 - `utils.ts` — General-purpose utilities: Tailwind class merging (`cn`), a sleep helper, and a profile fetcher.
 - `reset.d.ts` — Enables the `ts-reset` package for stricter TypeScript type checking.
@@ -197,6 +223,7 @@ Utility functions and type definitions.
 - `env.mjs` — Validates environment variables at build time using Zod.
 - `notifications.sql` — SQL for the notifications table, its RLS policies, and the triggers that write to it. Run it in the Supabase SQL editor. See [Schema history](#schema-history) for why it's the only SQL file here.
 - `middleware.ts` — Runs on every request to refresh the Supabase Auth session cookie.
+- `next.config.local.js` — A local-only Next.js override that switches dev file watching to polling, working around macOS `EMFILE` ("too many open files") errors that break hot reload. Its header comment says it is untracked and copied from `next.config.local.example.js`, but neither is true today: the file is committed and no example file exists. It is also not referenced by `next.config.js`, so nothing loads it — treat it as a snippet to merge into `next.config.js` if you hit the watcher bug, or clean it up.
 - `next.config.js` — Next.js configuration.
 - `components.json` — `shadcn/ui` configuration.
 - `tailwind.config.ts` — Tailwind CSS configuration.
@@ -221,6 +248,26 @@ UI components come from [`shadcn/ui`](https://ui.shadcn.com), which are built on
 - [shadcn/ui docs](https://ui.shadcn.com/docs)
 - [Tailwind CSS docs](https://tailwindcss.com/docs)
 
+### Design system: "The Open Queue"
+
+The UI was redesigned around an editorial identity — the site reads like a printed catalogue of projects rather than a generic dashboard. The pieces that make it consistent:
+
+**Type.** Three Google fonts are loaded in `app/layout.tsx` and exposed as Tailwind families:
+
+| Family                                   | Font     | Used for                                 |
+| ---------------------------------------- | -------- | ---------------------------------------- |
+| `font-serif` (aliased as `font-display`) | Fraunces | Headings, titles, italic asides          |
+| `font-sans`                              | Inter    | Body copy, UI controls                   |
+| `font-script`                            | Caveat   | The handwritten accent word in headlines |
+
+**Utility classes.** Defined once in `app/globals.css` under `@layer components`, so the editorial voice doesn't get re-implemented per page:
+
+- `.caps` — small, letter-spaced uppercase eyebrow labels ("The collection", "Admin", "Yours").
+- `.annot` — muted annotation text for counts, empty states, and hints.
+- `.dot-field` — dotted-paper background used behind empty states and CTAs.
+
+**Color.** `tailwind.config.ts` adds semantic `success` / `warning` / `danger` tokens, each with a `soft` variant for badge backgrounds, on top of the existing shadcn tokens. Everything is defined as HSL CSS variables in `globals.css` with a dark-mode override, so components never hardcode a hex value and both themes stay in sync. `/lab` exists to tune these variables against live components and copy the result back out.
+
 ### Next.js
 
 This project uses the [Next.js App Router](https://nextjs.org/docs/app). Pages are defined by `page.tsx` files inside the `app/` directory. Server Components are the default — add `"use client"` at the top of a file only when you need client-side interactivity (e.g. `useState`, `useEffect`, event handlers).
@@ -240,6 +287,30 @@ Supabase provides the database (PostgreSQL), authentication, and real-time featu
 - [Supabase Auth + Next.js](https://supabase.com/docs/guides/auth/auth-helpers/nextjs)
 - [Row Level Security](https://supabase.com/docs/guides/auth/row-level-security)
 
+#### Roles and approval
+
+`profiles` carries the role columns the whole permission model rests on:
+
+| Column                        | Meaning                                                     |
+| ----------------------------- | ----------------------------------------------------------- |
+| `role`                        | `app_role` enum — `member` (default), `swe`, `npo`, `admin` |
+| `role_approved`               | Whether the current role is admin-approved                  |
+| `requested_role`              | What the user asked for from `/settings/profile`            |
+| `approved_by` / `approved_at` | Who granted it, and when                                    |
+
+The derived permissions, computed in `lib/roles.ts`:
+
+| Flag          | True for                                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `isAdmin`     | `admin`                                                                                                            |
+| `canPost`     | `admin`, or an approved `npo`                                                                                      |
+| `canJoin`     | An approved `swe` — deliberately _not_ admins, because the `signups` policy admits `role = 'swe'` alone            |
+| `showJoinCta` | Anyone who isn't an `npo` or `admin`; an unapproved `member` still sees it disabled, as a prompt to request access |
+
+Opportunities carry `status` (`pending` → `approved` / `rejected` / `closed`), plus `t4sg_verified`, `nonprofit_link`, `start_date`, `end_date`, and `contact_email`. Newly posted projects start `pending` and only reach the public gallery once an admin approves them, which is also the event that fires the organizer's approval notification.
+
+These role functions and policies (`approve_role`, `is_admin`, `can_join_projects`, and the `signups` policies) live only in the Supabase dashboard — see the warning below.
+
 #### Schema history
 
 **This repo cannot currently recreate its own database.** Worth knowing before you point the app at a fresh Supabase project and wonder why every query fails.
@@ -252,17 +323,17 @@ git show c6781a3:setup.sql > setup.sql
 
 Everything added since — `opportunities`, `signups`, the `app_role` / `opportunity_status` / `signup_status` enums, the role-approval functions (`approve_role`, `is_admin`, `can_join_projects`, …) — was applied directly in the Supabase dashboard and was never committed. The only record of it is `lib/schema.ts`, which describes the shape but contains no DDL, no RLS policies, and no function bodies.
 
-`notifications.sql` is the one piece of schema that is tracked. Keep it that way: schema changes belong in a committed `.sql` file *and* run against the database, never just run. If you want this enforced rather than agreed to, baseline the live schema into `supabase/migrations/` with the Supabase CLI (`supabase db dump`) — that would recover the untracked schema into version control at the same time.
+`notifications.sql` is the one piece of schema that is tracked. Keep it that way: schema changes belong in a committed `.sql` file _and_ run against the database, never just run. If you want this enforced rather than agreed to, baseline the live schema into `supabase/migrations/` with the Supabase CLI (`supabase db dump`) — that would recover the untracked schema into version control at the same time.
 
 #### Notifications
 
 Notifications live in a single `notifications` table (`user_id`, `message`, `link`, `read`, `created_at`). Clients never insert into it — RLS grants `select` on your own rows and `update` on the `read` column only. Rows are written by one reusable trigger function, `public.notify_user()`, which takes three arguments:
 
-| Argument | Meaning |
-|---|---|
+| Argument     | Meaning                                                   |
+| ------------ | --------------------------------------------------------- |
 | `tg_argv[0]` | Column on the changed row holding the recipient's user id |
-| `tg_argv[1]` | Message to display |
-| `tg_argv[2]` | Link to open (optional) |
+| `tg_argv[1]` | Message to display                                        |
+| `tg_argv[2]` | Link to open (optional)                                   |
 
 Which field change fires it is decided by the trigger's `WHEN` clause, so **adding a notification is one `CREATE TRIGGER` statement** — no new function, no `schema.ts` edit, no UI change:
 
@@ -284,25 +355,25 @@ Two guards live in `notify_user()`: it skips the notification when the recipient
 
 Currently wired up:
 
-| Event | Recipient | Fires when |
-|---|---|---|
-| Added to a project | Volunteer | `signups.status` → `onboarded` |
-| Interest declined | Volunteer | `signups.status` → `declined` |
-| Project approved | Organizer | `opportunities.status` → `approved` |
-| Project rejected | Organizer | `opportunities.status` → `rejected` |
-| Project closed | Organizer | `opportunities.status` → `closed` |
+| Event              | Recipient | Fires when                          |
+| ------------------ | --------- | ----------------------------------- |
+| Added to a project | Volunteer | `signups.status` → `onboarded`      |
+| Interest declined  | Volunteer | `signups.status` → `declined`       |
+| Project approved   | Organizer | `opportunities.status` → `approved` |
+| Project rejected   | Organizer | `opportunities.status` → `rejected` |
+| Project closed     | Organizer | `opportunities.status` → `closed`   |
 
 ### Environment variables
 
 Required environment variables (defined in `.env.local`):
 
-| Variable | Description |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase project anon/public key |
-| `RESEND_API_KEY` | Optional Resend API key. Without it, email is logged as simulated. |
-| `EMAIL_FROM` | Verified sender, normally `T4SG Engineering <engineering@t4sg.dev>`. |
-| `EMAIL_TEAM` | Team mailbox used as the primary recipient for decision emails. |
+| Variable                        | Description                                                          |
+| ------------------------------- | -------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Your Supabase project URL                                            |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase project anon/public key                                |
+| `RESEND_API_KEY`                | Optional Resend API key. Without it, email is logged as simulated.   |
+| `EMAIL_FROM`                    | Verified sender, normally `T4SG Engineering <engineering@t4sg.dev>`. |
+| `EMAIL_TEAM`                    | Team mailbox used as the primary recipient for decision emails.      |
 
 These are validated at build time by `env.mjs`. If a required variable is missing, the build will fail with a descriptive error.
 
@@ -336,11 +407,16 @@ Install these for the best experience:
 
 For the Spring 2026 version, we made weekly progress notes are tracked in the `docs/` folder. For future development, we suggest adding to this progress log.
 
-| Date | Summary |
-|---|---|
-| 4/22/26 | GitHub OAuth auth working. Opportunity cards added. Minimal viable UI in place. Auth error page added. |
-| 4/30/26 | Modal components added — clicking a card now opens a detail view with an "I'm interested" button. Documentation updated. |
-| 8/16/26 | In-app notifications added: `notifications` table, a reusable `notify_user()` trigger, and a bell in the header. Signup status changes (`onboarded`, `declined`) notify the volunteer; opportunity status changes (`approved`, `rejected`, `closed`) notify the organizer. |
+| Date    | Summary                                                                                                                                                                                                                                                                                  |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4/22/26 | GitHub OAuth auth working. Opportunity cards added. Minimal viable UI in place. Auth error page added.                                                                                                                                                                                   |
+| 4/30/26 | Modal components added — clicking a card now opens a detail view with an "I'm interested" button. Documentation updated.                                                                                                                                                                 |
+| 5/9/26  | Supabase-backed dashboard. `setup.sql` deleted here — see [Schema history](#schema-history).                                                                                                                                                                                             |
+| 7/19/26 | (`020c4c0`) README updated for the Supabase connection and CLI setup steps; `supabase/` working directories added to `.gitignore`.                                                                                                                                                       |
+| 8/13/26 | (`7716ac3`, ui-experiments) "The Open Queue" editorial redesign: Fraunces/Inter/Caveat type system, `.caps` / `.annot` / `.dot-field` utilities, semantic status colors, and the `/lab` color tool. Studio identity landed alongside the role/approval model and the first email wiring. |
+| 8/16/26 | In-app notifications added: `notifications` table, a reusable `notify_user()` trigger, and a bell in the header. Signup status changes (`onboarded`, `declined`) notify the volunteer; opportunity status changes (`approved`, `rejected`, `closed`) notify the organizer.               |
+| 8/17/26 | Email routing finished: `/api/interest` and `/api/signups/[signupId]/decision` handle auth, writes, and Resend delivery server-side.                                                                                                                                                     |
+| 8/18/26 | Role-aware dashboard merged to main: admin review queue, owner delete, clickable project rows opening the shared detail modal, status badges, and the expanded submission form (nonprofit link, start/end dates, searchable skills multi-select).                                        |
 
 ## Interest and Decision Notifications
 
@@ -362,4 +438,3 @@ The email workflow uses authenticated Next.js Route Handlers rather than calling
 5. The decision email is sent from the configured T4SG sender to the engineering mailbox with the SWE and nonprofit CC'd.
 
 The shared mail wrapper is in `lib/email.ts`. It supports CC recipients and simulates delivery when `RESEND_API_KEY` is absent. Configure `EMAIL_FROM` with a sender on a domain verified by Resend before enabling real delivery.
-
