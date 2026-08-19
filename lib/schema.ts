@@ -50,9 +50,12 @@ export interface Database {
           created_at: string;
           created_by: string;
           description: string;
+          end_date: string | null;
           id: string;
           nonprofit: string;
+          nonprofit_link: string | null;
           skills: string;
+          start_date: string | null;
           status: Database["public"]["Enums"]["opportunity_status"];
           t4sg_verified: boolean;
           title: string;
@@ -62,9 +65,12 @@ export interface Database {
           created_at?: string;
           created_by?: string;
           description: string;
+          end_date?: string | null;
           id?: string;
           nonprofit: string;
+          nonprofit_link?: string | null;
           skills: string;
+          start_date?: string | null;
           status?: Database["public"]["Enums"]["opportunity_status"];
           t4sg_verified?: boolean;
           title: string;
@@ -74,9 +80,12 @@ export interface Database {
           created_at?: string;
           created_by?: string;
           description?: string;
+          end_date?: string | null;
           id?: string;
           nonprofit?: string;
+          nonprofit_link?: string | null;
           skills?: string;
+          start_date?: string | null;
           status?: Database["public"]["Enums"]["opportunity_status"];
           t4sg_verified?: boolean;
           title?: string;

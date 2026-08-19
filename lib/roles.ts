@@ -14,6 +14,7 @@ export interface Viewer {
   isAdmin: boolean;
   canPost: boolean; // may create opportunities
   canJoin: boolean; // may express interest in opportunities
+  showJoinCta: boolean; // the interest CTA is rendered at all
 }
 
 /**
@@ -48,6 +49,14 @@ export async function getViewer(): Promise<Viewer | null> {
     role,
     isAdmin: role === "admin",
     canPost: role === "admin" || (role === "npo" && approved),
-    canJoin: role === "admin" || (role === "swe" && approved),
+    // Approved SWEs only — admins deliberately excluded. The real gate is the
+    // `approved_swe_express_interest` policy on `signups`, which admits
+    // `role = 'swe'` alone, so an admin granted the button here would only
+    // earn themselves a 403.
+    canJoin: role === "swe" && approved,
+    // Hidden outright for the roles that never sign up: NPOs post projects and
+    // admins review them. A `member` still sees it disabled — for them it's a
+    // working prompt to request contributor access, not dead UI.
+    showJoinCta: role !== "npo" && role !== "admin",
   };
 }

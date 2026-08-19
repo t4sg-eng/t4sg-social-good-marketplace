@@ -1,46 +1,36 @@
 "use client";
 
-import { InterestButton } from "@/components/ui/interest-button";
-import Modal from "@/components/ui/modal";
+import type { CardOpportunity } from "@/components/ui/opportunity-detail-modal";
+import {
+  OpportunityDetailModal,
+  formatTimeline,
+  parseSkills,
+} from "@/components/ui/opportunity-detail-modal";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { Database } from "@/lib/schema";
 import { useState } from "react";
 
-type Status = Database["public"]["Enums"]["opportunity_status"];
-
-export interface CardOpportunity {
-  id: string;
-  title: string;
-  nonprofit: string;
-  description: string;
-  skills: string;
-  contact_email: string;
-  status: Status;
-}
+export type { CardOpportunity };
 
 interface OpportunityCardProps {
   index: number;
   opportunity: CardOpportunity;
-  canJoin: boolean;
+  /** Whether the interest CTA belongs on screen at all — see the modal. */
+  showJoin: boolean;
+  canJoin?: boolean;
   joinReason?: string;
-}
-
-function parseSkills(skills: string): string[] {
-  return skills
-    .split(/[,/]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
 }
 
 export function OpportunityCard({
   index,
   opportunity,
-  canJoin,
+  showJoin,
+  canJoin = false,
   joinReason,
 }: OpportunityCardProps) {
   const [open, setOpen] = useState(false);
   const skillList = parseSkills(opportunity.skills);
   const catalogue = String(index + 1).padStart(2, "0");
+  const timeline = formatTimeline(opportunity.start_date, opportunity.end_date);
 
   return (
     <>
@@ -74,6 +64,17 @@ export function OpportunityCard({
               {opportunity.title}
             </h3>
             <p className="caps mt-1">{opportunity.nonprofit}</p>
+            {opportunity.nonprofit_link && (
+              <a
+                href={opportunity.nonprofit_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 inline-block font-serif text-sm italic text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
+              >
+                Learn more →
+              </a>
+            )}
           </div>
           <span className="annot shrink-0 pt-1">({catalogue})</span>
         </div>
@@ -81,6 +82,8 @@ export function OpportunityCard({
         <p className="line-clamp-2 px-4 text-sm leading-relaxed text-muted-foreground">
           {opportunity.description}
         </p>
+
+        {timeline && <p className="annot mt-2 px-4">{timeline}</p>}
 
         <div className="flex flex-wrap gap-x-3 gap-y-1 px-4 pb-4 pt-3">
           {skillList.slice(0, 4).map((skill) => (
@@ -94,56 +97,15 @@ export function OpportunityCard({
         </div>
       </article>
 
-      <Modal open={open} onClose={() => setOpen(false)}>
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <span className="annot">Project no. {catalogue}</span>
-              <StatusBadge status={opportunity.status} />
-            </div>
-            <h2 className="font-serif text-3xl font-medium leading-tight text-foreground">
-              {opportunity.title}
-            </h2>
-            <p className="caps">{opportunity.nonprofit}</p>
-          </div>
-
-          <p className="text-[0.95rem] leading-relaxed text-foreground/80">
-            {opportunity.description}
-          </p>
-
-          {skillList.length > 0 && (
-            <div className="flex flex-col gap-2 border-t border-border pt-4">
-              <p className="caps">Skills needed</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                {skillList.map((skill) => (
-                  <span
-                    key={skill}
-                    className="font-serif text-sm italic text-foreground"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-2 border-t border-border pt-4">
-            <p className="caps">Contact</p>
-            <a
-              href={`mailto:${opportunity.contact_email}`}
-              className="w-fit font-serif text-sm italic text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
-            >
-              {opportunity.contact_email}
-            </a>
-          </div>
-
-          <InterestButton
-            opportunityId={opportunity.id}
-            disabled={!canJoin}
-            disabledReason={joinReason}
-          />
-        </div>
-      </Modal>
+      <OpportunityDetailModal
+        open={open}
+        onClose={() => setOpen(false)}
+        index={index}
+        opportunity={opportunity}
+        showJoin={showJoin}
+        canJoin={canJoin}
+        joinReason={joinReason}
+      />
     </>
   );
 }
