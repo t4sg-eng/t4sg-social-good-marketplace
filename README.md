@@ -30,9 +30,11 @@ A web platform that connects volunteers and developers with nonprofits that have
     - [Design system: "The Open Queue"](#design-system-the-open-queue)
     - [Next.js](#nextjs)
     - [Supabase](#supabase)
+      - [GitHub OAuth app ownership](#github-oauth-app-ownership)
       - [Roles and approval](#roles-and-approval)
       - [Schema history](#schema-history)
       - [Notifications](#notifications)
+    - [Input handling and sanitization](#input-handling-and-sanitization)
     - [Environment variables](#environment-variables)
   - [Development Tools](#development-tools)
     - [Code formatting and linting tools](#code-formatting-and-linting-tools)
@@ -83,6 +85,7 @@ Email delivery is simulated in development when a Resend API key is not configur
 - **Commit the schema** — Baseline the live database (roles, opportunities, signups, policies, functions) into `supabase/migrations/`. See [Schema history](#schema-history); right now the app cannot recreate its own database.
 - **Admin role management UI** — Role requests are written from the profile page, but approving them still means editing `profiles` by hand in Supabase.
 - **Close the loop on the two notification channels** — Interest and decision events send email from route handlers; status changes write in-app rows from triggers. Decide which events should do both.
+- **Escape email HTML** — `emailShell()` interpolates project titles and nonprofit names into HTML unescaped. See [Input handling and sanitization](#input-handling-and-sanitization).
 - **Maintain documentation** — Keep the `docs/` folder and this README up to date as features are added.
 
 ---
@@ -332,6 +335,17 @@ Supabase provides the database (PostgreSQL), authentication, and real-time featu
 - [Supabase Auth + Next.js](https://supabase.com/docs/guides/auth/auth-helpers/nextjs)
 - [Row Level Security](https://supabase.com/docs/guides/auth/row-level-security)
 
+#### GitHub OAuth app ownership
+
+The GitHub OAuth app that powers sign-in is registered to a T4SG-owned account rather than an individual member's personal GitHub account, which is where it started.
+
+Two reasons:
+
+- **Security and continuity.** The OAuth app's client ID and secret are the keys to every user's sign-in. On a personal account they're tied to one student — if that person graduates, loses access, or has their account compromised, so does the app. On a team-owned account, access is granted and revoked as people join and leave, and the credentials outlive any one member.
+- **Trust.** The GitHub consent screen names the app's owner. Users authorizing the app now see T4SG rather than an unfamiliar individual's username, which is what someone deciding whether to grant account access should see.
+
+If you need to change the callback URL or rotate the secret, do it from the T4SG account and update the provider settings in the Supabase dashboard under **Authentication → Providers → GitHub**. Ask your PM for access rather than registering a replacement app under your own account.
+
 #### Roles and approval
 
 `profiles` carries the role columns the whole permission model rests on:
@@ -408,6 +422,26 @@ Currently wired up:
 | Project rejected   | Organizer | `opportunities.status` → `rejected` |
 | Project closed     | Organizer | `opportunities.status` → `closed`   |
 
+### Input handling and sanitization
+
+Form input is normalized before it reaches the database, so the same value typed two different ways is stored one way. The rules live in the Zod schema in `components/ui/add-opportunity-modal.tsx`:
+
+| Field                     | Handling                                                                                                                                                                                                                                                  |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `contact_email`           | Trimmed and lowercased **before** validation, so ` Engineering@T4SG.dev` is stored as `engineering@t4sg.dev`. Stops the same address being saved as several different-looking values.                                                                     |
+| `nonprofit_link`          | Trimmed. Empty is allowed and stored as `NULL` rather than `""`. Anything else must parse as a full URL, including the scheme.                                                                                                                            |
+| `skills`                  | Split on commas, each entry trimmed, empty entries dropped. Custom skills are compared case-insensitively against the presets and against what's already selected, so typing `react` reuses the existing `React` chip instead of adding a near-duplicate. |
+| `start_date` / `end_date` | Both required. The end date must be on or after the start date — the values are ISO `yyyy-mm-dd`, which sorts lexicographically, so a string compare is a date compare.                                                                                   |
+
+The API routes assume the browser is lying:
+
+- The acting user always comes from `supabase.auth.getUser()` on the server. No route accepts a user id from the request body.
+- Request bodies are read as `unknown` and narrowed before use — `opportunityId` must be a string, `decision` must be exactly `"accept"` or `"reject"`. Malformed JSON returns 400.
+- The decision route derives the opportunity and volunteer from the signup row itself, then checks the caller created that opportunity.
+- Duplicate interest is caught by a unique `(opportunity_id, volunteer_id)` constraint, so a double click can't send two emails.
+
+**Not handled yet:** `emailShell()` in `lib/email.ts` interpolates values into an HTML string without escaping, and project titles, nonprofit names, and skills flow into it from the API routes. A title containing HTML would render as markup in the email. Escape those values before interpolating if you touch this code.
+
 ### Environment variables
 
 Environment variables live in `.env.local` (gitignored). `env.example` is the template — keep it in sync when you add a variable.
@@ -469,6 +503,19 @@ For the Spring 2026 version, we made weekly progress notes are tracked in the `d
 ## Feature Changes Since June 2026
 
 Everything below is in the current version of `main`. Each entry lists what changed and the files that changed.
+
+### Auth and accounts
+
+**Summary**
+
+- The GitHub OAuth app moved from a member's personal GitHub account to a T4SG-owned account.
+- Credentials are no longer tied to one student, so access survives people joining and leaving.
+- The GitHub consent screen now shows T4SG as the app owner instead of an individual's username.
+- No code changed. The client ID and secret live in the Supabase dashboard under Authentication → Providers → GitHub.
+
+**Files**
+
+- None — this is an account and dashboard change. See [GitHub OAuth app ownership](#github-oauth-app-ownership).
 
 ### Roles and permissions
 
